@@ -26,10 +26,15 @@ def login():
             flash("Enter correct role",'error')
             return redirect("/")
         flash("Login Successful","success")
-        if(current_user.status=="approved"):
-            return redirect("/dashboard")
+        if(current_user.role == "staff"):
+            if(current_user.status == "approved"):
+                return redirect(url_for("main.staff_dashboard",id=current_user.user_id))
+            else:
+                return render_template("pending_approval.html")
+        elif(current_user.role == "user"):
+            return redirect(url_for("main.user_dashboard",id=current_user.user_id))
         else:
-            return render_template("pending_approval.html")
+            return redirect("/admin")
     else:
         return render_template("login.html")
 
@@ -65,6 +70,14 @@ def register_user(role):
     else:
         return render_template("register.html",role=role)
     
-@bp.route("/dashboard")
-def dashboard():
-    return 'hii'
+@bp.route("/admin")
+def admin_dashboard():
+    return render_template("admin_dashboard.html")
+
+@bp.route("/user/<int:id>")
+def user_dashboard(id):
+    return render_template("user_dashboard.html",id=id)
+
+@bp.route("/staff/<int:id>")
+def staff_dashboard(id):
+    return render_template("staff_dashboard.html",id=id)
