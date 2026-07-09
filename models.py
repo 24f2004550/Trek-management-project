@@ -1,11 +1,12 @@
-from flask_sqlalchemy import SQLAlchemy
+from extensions import db
 from datetime import date,time
 
-db=SQLAlchemy()
 
 class User(db.Model):
     __tablename__='user'
     user_id =db.Column(db.Integer,primary_key=True,autoincrement=True)
+    user_name=db.Column(db.String)
+    password=db.Column(db.String,nullable=False)
     name =db.Column(db.String,nullable=False)
     phonenumber =db.Column(db.String(10),unique=True)
     email =db.Column(db.String,nullable=False,unique=True)
@@ -13,6 +14,7 @@ class User(db.Model):
     gender =db.Column(db.String)
     emergency_number =db.Column(db.String(10))
     role=db.Column(db.String,nullable=False)
+    experience=db.Column(db.String,default="NA")
     treks=db.relationship("Staff",back_populates="user")
     bookings=db.relationship("Booking",back_populates="user")
 
