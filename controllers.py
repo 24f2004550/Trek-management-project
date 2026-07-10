@@ -1,6 +1,6 @@
 from flask import Flask,redirect,request,render_template,url_for,flash,session,Blueprint
 from sqlalchemy import text,or_,and_
-from flask_login import UserMixin,LoginManager,login_user,login_required,current_user,logout_user
+from flask_login import LoginManager,login_user,login_required,current_user,logout_user
 from werkzeug.security import generate_password_hash,check_password_hash
 from models import User,Trek,Slots
 from extensions import login_manager,db
@@ -15,24 +15,24 @@ def user(user_id):
 @bp.route("/",methods=["GET","POST"])
 def login():
     if(request.method == "POST"):
-        current_user=(db.session.execute(text("SELECT * from user where email=:e or user_name=:e"),{"e":request.form["user"]})).fetchone()
-        if current_user == None:
+        login_userr=(db.session.execute(text("SELECT * from user where email=:e or user_name=:e"),{"e":request.form["user"]})).fetchone()
+        if login_userr == None:
             flash("Enter Valid Username/email",'error')
             return redirect("/")
-        if not check_password_hash(current_user.password,request.form["password"]):
+        if not check_password_hash(login_userr.password,request.form["password"]):
             flash("Enter correct password",'error')
             return redirect("/")
-        if current_user.role  != request.form["role"]:
+        if login_userr.role  != request.form["role"]:
             flash("Enter correct role",'error')
             return redirect("/")
         flash("Login Successful","success")
-        if(current_user.role == "staff"):
-            if(current_user.status == "approved"):
-                return redirect(url_for("main.staff_dashboard",id=current_user.user_id))
+        if(login_userr.role == "staff"):
+            if(login_userr.status == "approved"):
+                return redirect(url_for("main.staff_dashboard",id=login_userr.user_id))
             else:
                 return render_template("pending_approval.html")
-        elif(current_user.role == "user"):
-            return redirect(url_for("main.user_dashboard",id=current_user.user_id))
+        elif(login_userr.role == "user"):
+            return redirect(url_for("main.user_dashboard",id=login_userr.user_id))
         else:
             return redirect("/admin")
     else:
