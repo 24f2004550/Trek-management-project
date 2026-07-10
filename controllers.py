@@ -2,11 +2,12 @@ from flask import Flask,redirect,request,render_template,url_for,flash,session,B
 from sqlalchemy import text,or_,and_
 from flask_login import LoginManager,login_user,login_required,current_user,logout_user
 from werkzeug.security import generate_password_hash,check_password_hash
-from models import User,Trek,Slots
+from models import User,Trek,Slots,Booking
 from extensions import login_manager,db
 import os
 
 bp=Blueprint("main",__name__)
+
 
 @login_manager.user_loader
 def user(user_id):
@@ -15,7 +16,7 @@ def user(user_id):
 @bp.route("/",methods=["GET","POST"])
 def login():
     if(request.method == "POST"):
-        login_userr=(db.session.execute(text("SELECT * from user where email=:e or user_name=:e"),{"e":request.form["user"]})).fetchone()
+        login_userr=User.query.filter(or_(User.email==request.form["user"],User.user_name==request.form["user"])).first()
         if login_userr == None:
             flash("Enter Valid Username/email",'error')
             return redirect("/")
@@ -26,6 +27,7 @@ def login():
             flash("Enter correct role",'error')
             return redirect("/")
         flash("Login Successful","success")
+        login_user(login_userr)
         if(login_userr.role == "staff"):
             if(login_userr.status == "approved"):
                 return redirect(url_for("main.staff_dashboard",id=login_userr.user_id))
@@ -42,8 +44,8 @@ def login():
 @bp.route("/register/<role>",methods=["GET","POST"])
 def register_user(role):
     if (request.method == "POST"):
-        current_user1=(db.session.execute(text("SELECT * from user where email=:e"),{"e":request.form["email"]})).fetchone()
-        current_user2=(db.session.execute(text("SELECT * from user where phonenumber=:p or emergency_number=:e"),{"p":request.form["phone"],"e":request.form["emergency"]})).fetchone()
+        current_user1=User.query.filter(User.email==request.form["email"]).first()
+        current_user2=User.query.filter(or_(User.phonenumber==request.form["phone"],User.emergency_number==request.form["phone"])).first()
         if current_user1 != None:
             flash("User already exists","warning")
         elif(request.form["password"] != request.form["confirm_password"]):
@@ -90,13 +92,16 @@ def staff():
 def profile():
     return "admin profile"
 
-@bp.route("/bookings")
+
 def bookings():
-    return "bookings"
+    bookings=db.session.execute(text("SELECT *  from bookings order by booking_date,booking_time asc")).fetchall()
+    return bookings
 
 @bp.route("/logout")
 def logout():
-    return "logout"
+    logout_user()
+    flash("You have been successfully logged out.","success")
+    return redirect(url_for("main.login"))
 
 @bp.route("/user/<int:id>")
 def user_dashboard(id):

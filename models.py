@@ -19,7 +19,7 @@ class User(UserMixin,db.Model):
     treks=db.relationship("Staff",back_populates="user")
     bookings=db.relationship("Booking",back_populates="user")
 
-    def get_user_id(self):
+    def get_id(self):
         return(str(self.user_id))
 
 class Trek(db.Model):
