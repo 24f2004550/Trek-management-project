@@ -63,6 +63,7 @@ class Booking(db.Model):
     slot_id=db.Column(db.Integer,db.ForeignKey("slots.slot_id"))
     booking_date=db.Column(db.Date)
     booking_time=db.Column(db.Time)
+    slots_booked=db.Column(db.Integer)
     status=db.Column(db.String) #booked,cancelled,completed
     user=db.relationship("User",back_populates="bookings")
     slot=db.relationship("Slots",back_populates="bookings")

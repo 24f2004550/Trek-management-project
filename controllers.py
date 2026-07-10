@@ -74,7 +74,7 @@ def register_user(role):
     
 @bp.route("/admin")
 def admin_dashboard():
-    return render_template("admin_dashboard.html")
+    return render_template("admin_dashboard.html",bookings=bookings(10))
 
 @bp.route("/users")
 def users():
@@ -93,8 +93,8 @@ def profile():
     return "admin profile"
 
 
-def bookings():
-    bookings=db.session.execute(text("SELECT *  from bookings order by booking_date,booking_time asc")).fetchall()
+def bookings(limit):
+    bookings=Booking.query.order_by(Booking.booking_date.desc(),Booking.booking_time.desc()).limit(limit).all()
     return bookings
 
 @bp.route("/logout")
