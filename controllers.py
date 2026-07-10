@@ -74,6 +74,30 @@ def register_user(role):
 def admin_dashboard():
     return render_template("admin_dashboard.html")
 
+@bp.route("/users")
+def users():
+    return "Users"
+
+@bp.route("/treks")
+def treks():
+    return "treks"
+
+@bp.route("/staff")
+def staff():
+    return "staff"
+
+@bp.route("/profile")
+def profile():
+    return "admin profile"
+
+@bp.route("/bookings")
+def bookings():
+    return "bookings"
+
+@bp.route("/logout")
+def logout():
+    return "logout"
+
 @bp.route("/user/<int:id>")
 def user_dashboard(id):
     return render_template("user_dashboard.html",id=id)

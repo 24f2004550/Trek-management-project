@@ -1,8 +1,9 @@
 from extensions import db
 from datetime import date,time
+from  flask_login import UserMixin
 
 
-class User(db.Model):
+class User(UserMixin,db.Model):
     __tablename__='user'
     user_id =db.Column(db.Integer,primary_key=True,autoincrement=True)
     user_name=db.Column(db.String)
@@ -18,7 +19,8 @@ class User(db.Model):
     treks=db.relationship("Staff",back_populates="user")
     bookings=db.relationship("Booking",back_populates="user")
 
-#this treks here i.e usser.trek give list of objects of staff class where usser is object of above User class
+    def get_user_id(self):
+        return(str(self.user_id))
 
 class Trek(db.Model):
     __tablename__='trek'
