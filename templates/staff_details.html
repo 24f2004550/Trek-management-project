@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Admin Dashboard</title>
+		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    		<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+		<link rel="stylesheet"href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+		<style>
+		</style>
+	</head>
+	<body class="bg-warning-subtle px-0">
+	<div class="container-fluid py-2 px-0">
+		<div class="row justify-content-center">
+		<div class="col-md-10 col-lg-11">
+			<div class="card shadow-lg border-0 py-1">
+				<div class="card-header bg-dark text-white">
+					<h4 class="mb-0">
+								 Staff
+					</h4>
+				</div>
+				<div class="card-body">
+				<nav class="bg-light">					
+					<h4 class="text-end">
+						Welcome,{{ current_user.name }}					
+					</h4>
+					<span class="d-flex gap-5 py-1 px-5 border-primary border rounded-pill">
+					
+						<a href="/admin" class="nav-link text-primary fw-semibold">Home</a>
+					
+						<a href="/users" class="nav-link text-primary fw-semibold">Users</a>
+					
+						<a href="/treks" class="nav-link text-primary fw-semibold">Treks</a>
+					
+						<a href="/staff" class="nav-link text-primary fw-semibold">Staff</a>
+						
+						<a href="/profile" class="nav-link text-primary fw-semibold">Profile</a>
+				
+						<a href="/logout" class="nav-link text-primary fw-semibold">Logout</a>
+					
+					</span>
+				</nav>
+				<!-- div class="row mb-4 py-3">
+					<div class="col-md-3">
+						<div class="card shadow bg-success-subtle text-success border-success border rounded">
+							<div class="card-body text-center fw-semibold">
+								<h2>{{ Treks }}</h2>
+								<p class="mb-0">Total Treks</p>
+							</div>
+						</div>
+					</div>
+					<div class="col-md-3">
+						<div class="card shadow bg-success-subtle text-success border-success border rounded">
+							<div class="card-body text-center fw-semibold">
+								<h2>{{ Users }}</h2>
+								<p class="mb-0">Users</p>
+							</div>
+						</div>
+					</div>
+					<div class="col-md-3">
+						<div class="card shadow bg-success-subtle text-success border-success border rounded">
+							<div class="card-body text-center fw-semibold">
+								<h2>{{ Staff }}</h2>
+								<p class="mb-0">Staff</p>
+							</div>
+						</div>
+					</div>
+					<div class="col-md-3">
+						<div class="card shadow bg-success-subtle text-success border-success border rounded">
+							<div class="card-body text-center fw-semibold">
+								<h2>{{ Bookings }}</h2>
+								<p class="mb-0">Bookings</p>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="row py-1 px-5">
+				<div class="col-md-6 border-dark border rounded">
+				<h4 class="text-decoration-underline text-secondary">Recent Bookings</h4>
+				
+				<ul>
+					{% for b in bookings %}
+					<li>{{ b.user.name }} booked {{ b.slots_booked }} slots for {{ b.slot.treks.trek_name}}</li>
+					{% endfor %}
+				</ul>
+
+				</div>
+				<div class="col-md-6 text-center">
+					<h4>Top Treks (in last  7 days)</h4>
+					{% if pie == True %}
+					<img src="{{url_for('static',filename='hot_trek_pie.png') }}" class="img-fluid">
+					{% else %}
+					No Trip in last 7 days.
+					{% endif %}
+				</div>
+				</div -->
+				</div>
+			</div>
+		</div>
+		</div>
+	</div>	
+	</body>
+</html>

@@ -1,9 +1,11 @@
 from flask import Flask,redirect,request,render_template,url_for,flash,session,Blueprint
-from sqlalchemy import text,or_,and_
+from sqlalchemy import text,or_,and_,func
 from flask_login import LoginManager,login_user,login_required,current_user,logout_user
 from werkzeug.security import generate_password_hash,check_password_hash
 from models import User,Trek,Slots,Booking
 from extensions import login_manager,db
+from datetime import date,timedelta
+import matplotlib.pyplot as plt
 import os
 
 bp=Blueprint("main",__name__)
@@ -74,7 +76,20 @@ def register_user(role):
     
 @bp.route("/admin")
 def admin_dashboard():
-    return render_template("admin_dashboard.html",bookings=bookings(10))
+    labels=[]
+    sizes=[]
+    if(hot_treks()!=[]):
+        for label,size in hot_treks():
+            labels.append(label)
+            sizes.append(sizes)
+        plt.figure(figsize=(4,4))
+        plt.pie(sizes,labels=None,startangle=90,autopct="%1.1f%%",wedgeprops={"edgecolor":"black"})
+        plt.legend(labels,loc="lower center")
+        plt.savefig("static/hot_trek_pie.png")
+        plt.close()
+    if(labels==[] or sizes==[]):
+        return render_template("admin_dashboard.html",bookings=bookings(10),pie=False,Users=User.query.filter(User.role=="user").count(),Treks=Trek.query.count(),Staff=User.query.filter(User.role=="staff").count(),Bookings=Booking.query.count())
+    return render_template("admin_dashboard.html",bookings=bookings(10),pie=True,Users=User.query.filter(User.role=="user").count(),Treks=Trek.query.count(),Staff=User.query.filter(User.role=="staff").count(),Bookings=Booking.query.count())
 
 @bp.route("/users")
 def users():
@@ -95,6 +110,11 @@ def profile():
 
 def bookings(limit):
     bookings=Booking.query.order_by(Booking.booking_date.desc(),Booking.booking_time.desc()).limit(limit).all()
+    return bookings
+
+def hot_treks():
+    datee=date.today() - timedelta(days=7)
+    bookings=db.session.query(Trek.trek_name,func.count(Booking.booking_id)).join(Slots,Trek.trek_id==Slots.trek_id).join(Booking,Booking.slot_id==Slots.slot_id).filter(Booking.booking_date>=datee).group_by(Trek.trek_name).all()
     return bookings
 
 @bp.route("/logout")

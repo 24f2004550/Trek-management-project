@@ -12,14 +12,14 @@
 	<div class="container-fluid py-2 px-0">
 		<div class="row justify-content-center">
 		<div class="col-md-10 col-lg-11">
-			<div class="card shadow-lg border-0 bg-light py-1">
+			<div class="card shadow-lg border-0 py-1">
 				<div class="card-header bg-dark text-white">
 					<h4 class="mb-0">
 								 Admin Dashboard
 					</h4>
 				</div>
 				<div class="card-body">
-				<nav class>					
+				<nav class="bg-light">					
 					<h4 class="text-end">
 						Welcome,{{ current_user.name }}					
 					</h4>
@@ -39,8 +39,59 @@
 					
 					</span>
 				</nav>
-				<div class="py-3">
-				<h4>Recent Bookings</h4>
+				<div class="row mb-4 py-3">
+					<div class="col-md-3">
+						<div class="card shadow bg-success-subtle text-success border-success border rounded">
+							<div class="card-body text-center fw-semibold">
+								<h2>{{ Treks }}</h2>
+								<p class="mb-0">Total Treks</p>
+							</div>
+						</div>
+					</div>
+					<div class="col-md-3">
+						<div class="card shadow bg-success-subtle text-success border-success border rounded">
+							<div class="card-body text-center fw-semibold">
+								<h2>{{ Users }}</h2>
+								<p class="mb-0">Users</p>
+							</div>
+						</div>
+					</div>
+					<div class="col-md-3">
+						<div class="card shadow bg-success-subtle text-success border-success border rounded">
+							<div class="card-body text-center fw-semibold">
+								<h2>{{ Staff }}</h2>
+								<p class="mb-0">Staff</p>
+							</div>
+						</div>
+					</div>
+					<div class="col-md-3">
+						<div class="card shadow bg-success-subtle text-success border-success border rounded">
+							<div class="card-body text-center fw-semibold">
+								<h2>{{ Bookings }}</h2>
+								<p class="mb-0">Bookings</p>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="row py-1 px-5">
+				<div class="col-md-6 border-dark border rounded">
+				<h4 class="text-decoration-underline text-secondary">Recent Bookings</h4>
+				
+				<ul>
+					{% for b in bookings %}
+					<li>{{ b.user.name }} booked {{ b.slots_booked }} slots for {{ b.slot.treks.trek_name}}</li>
+					{% endfor %}
+				</ul>
+
+				</div>
+				<div class="col-md-6 text-center">
+					<h4>Top Treks (in last  7 days)</h4>
+					{% if pie == True %}
+					<img src="{{url_for('static',filename='hot_trek_pie.png') }}" class="img-fluid">
+					{% else %}
+					No Trip in last 7 days.
+					{% endif %}
+				</div>
 				</div>
 				</div>
 			</div>
