@@ -16,8 +16,8 @@ class User(UserMixin,db.Model):
     emergency_number =db.Column(db.String(10))
     role=db.Column(db.String,nullable=False)
     experience=db.Column(db.String,default="NA")
-    treks=db.relationship("Staff",back_populates="user")
-    bookings=db.relationship("Booking",back_populates="user")
+    treks=db.relationship("Staff",back_populates="user",cascade="all,delete")
+    bookings=db.relationship("Booking",back_populates="user",cascade="all,delete")
 
     def get_id(self):
         return(str(self.user_id))
@@ -53,8 +53,8 @@ class Slots(db.Model):
     slot_limit=db.Column(db.Integer)
     status=db.Column(db.String) # completed,going,open
     treks=db.relationship("Trek",back_populates="slots")
-    slotstaff=db.relationship("Staff",back_populates="trek_slot")
-    bookings=db.relationship("Booking",back_populates="slot")
+    slotstaff=db.relationship("Staff",back_populates="trek_slot",cascade="all,delete")
+    bookings=db.relationship("Booking",back_populates="slot",cascade="all,delete")
 
 class Booking(db.Model):
     __tablename__="bookings"
@@ -67,7 +67,7 @@ class Booking(db.Model):
     status=db.Column(db.String) #booked,cancelled,completed
     user=db.relationship("User",back_populates="bookings")
     slot=db.relationship("Slots",back_populates="bookings")
-    reviews=db.relationship("Review",back_populates="booking")
+    reviews=db.relationship("Review",back_populates="booking",cascade="all,delete")
 
 class Review(db.Model):
     __tablename__="reviews"

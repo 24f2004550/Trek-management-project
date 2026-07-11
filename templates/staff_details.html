@@ -15,7 +15,7 @@
 			<div class="card shadow-lg border-0 py-1">
 				<div class="card-header bg-dark text-white">
 					<h4 class="mb-0">
-								 Staff
+								 Staff Details
 					</h4>
 				</div>
 				<div class="card-body">
@@ -39,60 +39,88 @@
 					
 					</span>
 				</nav>
-				<!-- div class="row mb-4 py-3">
-					<div class="col-md-3">
-						<div class="card shadow bg-success-subtle text-success border-success border rounded">
-							<div class="card-body text-center fw-semibold">
-								<h2>{{ Treks }}</h2>
-								<p class="mb-0">Total Treks</p>
+					<h4 class="mb-3 py-3 text-decoration-underline">
+						<i class="bi bi-person-workspace"></i>
+						Staff List
+					</h4>	
+					{% if staff|length > 0 %}
+						<div class="card shadow-lg border-0">
+							<div class="card-body">
+								<div class="table-responsive">
+									<table class="table table-striped table-hover table-bordered align-middle">
+										<thead class="table-dark">
+											<tr>
+											<th>S.No</th>
+											<th>Name</th>
+											<th>Email</th>
+											<th>Phone</th>
+											<th>Status</th>
+											<th>Actions</th>
+											</tr>
+										</thead>
+										<tbody>
+											{% for s in staff%}
+												<tr>
+													<td>{{ loop.index }}</td>
+													<td>{{ s.name }}</td>
+													<td>{{ s.email }}</td>
+													<td>{{ s.phonenumber }}</td>
+													<td>
+														{% if s.status == "approved" %}
+													<span class="badge bg-success">
+													<i class="bi bi-check-circle"></i>
+													Approved
+													</span>
+														{% elif s.status == "waiting" %}
+													<span class="badge bg-warning text-dark">
+													<i class="bi bi-clock"></i>
+													Waiting
+													</span>
+														{% elif s.status == "blacklisted" %}
+													<span class="badge bg-dark text-light">
+													<i class="bi bi-slash-circle-fill"></i>
+													Blacklisted
+													</span>
+														{% else %}
+													<span class="badge bg-secondary">
+													<i class="bi bi-info-circle"></i>
+													{{ s.status }}
+													</span>
+														{% endif %}
+													</td>
+													<td>
+														{% if s.status == "waiting" %}
+							<a href="{{ url_for('bp.approve',id=s.user_id) }}" class="btn btn-secondary btn-sm">
+								<i class="bi bi-check-circle"></i>
+								Approve
+							</a>
+														{% endif %}
+														{% if s.status == "blacklisted" %}
+							<a href="{{ url_for('bp.restore',id=s.user_id) }}" class="btn btn-success btn-sm">
+								<i class="bi bi-check-circle"></i>
+								Restore
+							</a>	
+														{% else %}
+							<a href="{{ url_for('bp.blacklist',id=s.user_id) }}" class="btn btn-dark btn-sm">
+								<i class="bi bi-slash-circle"></i>
+								Blacklist
+							</a>
+														{% endif %}
+							<a href="{{ url_for('bp.delete',id=s.user_id) }}" class="btn btn-danger btn-sm">
+								<i class="bi bi-trash"></i>
+								Delete
+							</a>
+													</td>
+												</tr>
+											{% endfor %}
+										</tbody>
+									</table>
+								</div>
 							</div>
 						</div>
-					</div>
-					<div class="col-md-3">
-						<div class="card shadow bg-success-subtle text-success border-success border rounded">
-							<div class="card-body text-center fw-semibold">
-								<h2>{{ Users }}</h2>
-								<p class="mb-0">Users</p>
-							</div>
-						</div>
-					</div>
-					<div class="col-md-3">
-						<div class="card shadow bg-success-subtle text-success border-success border rounded">
-							<div class="card-body text-center fw-semibold">
-								<h2>{{ Staff }}</h2>
-								<p class="mb-0">Staff</p>
-							</div>
-						</div>
-					</div>
-					<div class="col-md-3">
-						<div class="card shadow bg-success-subtle text-success border-success border rounded">
-							<div class="card-body text-center fw-semibold">
-								<h2>{{ Bookings }}</h2>
-								<p class="mb-0">Bookings</p>
-							</div>
-						</div>
-					</div>
-				</div>
-				<div class="row py-1 px-5">
-				<div class="col-md-6 border-dark border rounded">
-				<h4 class="text-decoration-underline text-secondary">Recent Bookings</h4>
-				
-				<ul>
-					{% for b in bookings %}
-					<li>{{ b.user.name }} booked {{ b.slots_booked }} slots for {{ b.slot.treks.trek_name}}</li>
-					{% endfor %}
-				</ul>
-
-				</div>
-				<div class="col-md-6 text-center">
-					<h4>Top Treks (in last  7 days)</h4>
-					{% if pie == True %}
-					<img src="{{url_for('static',filename='hot_trek_pie.png') }}" class="img-fluid">
 					{% else %}
-					No Trip in last 7 days.
-					{% endif %}
-				</div>
-				</div -->
+						No staff registered yet.
+					{% endif %}		
 				</div>
 			</div>
 		</div>

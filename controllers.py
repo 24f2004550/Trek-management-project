@@ -101,7 +101,57 @@ def treks():
 
 @bp.route("/staff")
 def staff():
-    return "staff"
+    return render_template("staff_details.html",staff=User.query.filter(User.role=="Staff").all())
+
+@bp.route("/approve/<int:id>")
+def approve_staff(id):
+    if(current_user.role=="admin"):
+        user=User.query.filter(User.user_id==id).first()
+        user.status="approved"
+        db.session.commit()
+        return redirect("/staff")
+    else:
+        return redirect("/")
+
+@bp.route("/blacklist/<int:id>")
+def blacklist(id):
+    if(current_user.role=="admin"):
+        user=User.query.filter(User.user_id==id).first()
+        user.status="blacklisted"
+        db.session.commit()
+        if(user.role=="staff"):
+            return redirect("/staff")
+        else:
+            return redirect("/users")
+    else:
+        return redirect("/")
+    
+@bp.route("/restore/<int:id>")
+def restore(id):
+    if(current_user.role=="admin"):
+        user=User.query.filter(User.user_id==id).first()
+        user.status="waiting"
+        db.session.commit()
+        if(user.role=="staff"):
+            return redirect("/staff")
+        else:
+            return redirect("/users")
+    else:
+        return redirect("/")
+    
+@bp.route("/delete/<int:id>")
+def delete(id):
+    if(current_user.role=="admin"):
+        user=User.query.filter(User.user_id==id).first()
+        role=user.role
+        db.session.delete(user)
+        db.session.commit()
+        if(role=="staff"):
+            return redirect("/staff")
+        else:
+            return redirect("/users")
+    else:
+        return redirect("/")
 
 @bp.route("/profile")
 def profile():
