@@ -374,9 +374,9 @@ def remove_staff_from_slot(staff_id,slot_id):
     remove_staf_from_slot(staff_id,slot_id)
     return render_template("slot_details.html",slot=Slots.query.filter(Slots.slot_id==id).first())
 
-#def add_staff_to_slot(staff_id,slot_id):
-#    staff=Staff(staff_id=staff_id,aslot_id=slot_id)
-#    db.session.add(staff)
+def add_staff_to_slot(staff_id,slot_id):
+    staff=Staff(staff_id=staff_id,aslot_id=slot_id)
+    db.session.add(staff)
 
 @bp.route("/assign/staff/toslot/<int:id>",methods=["GET","POST"])
 def assign_staff_to_slot(id):
