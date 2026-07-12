@@ -135,7 +135,7 @@ Delete Slot</a>
 													<td>{{ loop.index }}</td>
 													<td><a href="{{ url_for("main.profile",id=s.staff_id) }}">{{ s.user.name }}</a></td>
 													<td>{{ s.user.email }}</td>
-													<td><a href="{{ url_for('main.remove_staff',staff_id=s.staff_id,slot_id=slot.slot_id) }}" class="btn btn-dark btn-sm">
+													<td><a href="{{ url_for('main.remove_staff_from_slot',staff_id=s.staff_id,slot_id=slot.slot_id) }}" class="btn btn-danger btn-sm">
 								<i class="bi bi-x-circle"></i>
 								Remove
 							</a></a>

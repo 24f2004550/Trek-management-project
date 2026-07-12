@@ -50,7 +50,7 @@
 					
 						<a href="/treks" class="nav-link text-primary fw-semibold">Treks</a>
 					
-						<a href="/staff" class="nav-link text-success fw-semibold">Staff</a>
+						<a href="/staff" class="nav-link text-dark fw-semibold">Staff</a>
 						
 						<a href="{{ url_for("main.profile",id=current_user.user_id) }}" class="nav-link text-primary fw-semibold">Profile</a>
 				
@@ -81,7 +81,8 @@
 											{% for s in staff%}
 												<tr>
 													<td>{{ loop.index }}</td>
-													<td><a href="{{ url_for("main.profile",id=s.user_id) }}"></a>{{ s.name }}</td>
+													<td>
+<a href="{{ url_for("main.profile",id=s.user_id) }}">{{ s.name }}</a></td>
 													<td>{{ s.email }}</td>
 													<td>{{ s.phonenumber }}</td>
 													<td>

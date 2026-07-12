@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Treks</title>
+		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    		<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+		<link rel="stylesheet"href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+		<style>
+		</style>
+	</head>
+	<body class="bg-warning-subtle px-0">
+	<div class="container-fluid py-2 px-0">
+		<div class="row justify-content-center">
+		<div class="col-md-10 col-lg-11">
+			<div class="card shadow-lg border-0 py-1">
+				<div class="card-header bg-dark text-white">
+					<h4 class="mb-0">
+								 Staff Dashboard
+					</h4>
+				</div>
+				<div class="card-body">
+					
+
+
+
+					<div class="row border-bottom pb-2">
+						<h4 class="col">
+							Welcome , {{  current_user.name }}
+						</h4>
+						<div class="col-auto">
+							<a href="{{ url_for("main.profile",id=current_user.user_id) }}" class="btn btn-primary"><i class="bi bi-person-fill"></i> Profile</a>
+
+							<a href="/logout" class="btn btn-danger"><i class="bi bi-key"></i> Logout</a>
+
+						</div>
+						<div class="py-0">
+							( Staff Id :- {{ current_user.user_id }} )
+						</div>
+					</div>	
+					{% with messages=get_flashed_messages(with_categories=true) %}
+					{% if messages %}
+					{% for category,message in messages %}
+					<div class="
+						{% if category == "success" %}
+							alert alert-success
+						{% elif category == "info" %}
+							alert alert-info
+						{% elif category == "warning" %}
+							alert alert-warning
+						{% elif category == "error" %}
+							alert alert-danger
+						{% else %}
+							alert alert-secondary
+						{% endif %}">{{ message }}
+					</div>
+					{% endfor %}
+					{% endif %}
+					{% endwith %}
+
+
+
+
+					<div class="row mb-4 py-3">
+					<div class="col-md-4">
+						<div class="card shadow bg-success text-light border-success border rounded">
+							<a href="{{ url_for("main.staff_dashboard",id=current_user.user_id) }}" class="text-decoration-none text-light">
+							<div class="card-body text-center fw-semibold">
+								<h2>{{ current_user.treks|length }}</h2>
+								<p class="mb-0">Total Treks</p>
+							</div></a>
+						</div>
+					</div>
+					<div class="col-md-4">
+						<div class="card shadow {% if x==1 %} bg-secondary {% else %} bg-success {% endif %} text-light border-success border rounded">
+							{% if x==0 %}
+							<a href="{{ url_for("main.assigned_treks",id=current_user.user_id) }}" class="text-decoration-none text-light">{% endif %}
+
+							<div class="card-body text-center fw-semibold">
+								<h2>{{ assigned_treks|length }}</h2>
+								<p class="mb-0">Assigned Treks</p>
+							</div>{% if x==0 %}
+</a>{% endif %}
+						</div>
+					</div>
+					<div class="col-md-4">
+						<div class="card shadow {% if x==0 %} bg-secondary {% else %} bg-success {% endif %} text-light border-success border rounded">
+							{% if x==1 %}
+							<a href="{{ url_for("main.completed_treks",id=current_user.user_id) }}" class="text-decoration-none text-light">{% endif %}
+							<div class="card-body text-center fw-semibold">
+								<h2>{{ completed_treks|length }}</h2>
+								<p class="mb-0">Completed Treks</p>
+							</div>{% if x==1 %}
+</a>{% endif %}
+						</div>
+					</div>
+					</div>
+					
+					{% if x==1 %}
+							{% if treks|length > 0 %}
+								{% for s in treks %}
+									<div class="card border rounded border-dark bg-secondary-subtle">
+										<div>
+												
+											<span class="fs-6"><i class="bi bi-tree-fill"></i> Trek Name :- </span>{{ s.trek_slot.treks.trek_name }}
+										</div>
+										<div>
+												
+											<span class="fs-6"><i class="bi bi-geo-alt"></i> Location    :-  </span>{{ s.trek_slot.treks.location }}
+										</div>
+										<div>
+												
+											<span class="fs-6"><i class="bi bi-lightning-fill"></i> Difficulty    :-   </span>{{ s.trek_slot.treks.difficulty }}
+										</div>
+										<div>
+												
+											<span class="fs-6"><i class="bi bi-calendar-event"></i> Date    :-   </span>{% if s.trek_slot.slot_date != None %} {{ s.trek_slot.slot_date.isoformat() }} {% else %} Not yet decided. {% endif %}
+										</div>
+										<div>
+												
+											<span class="fs-6"><i class="bi bi-clock-fill"></i> Time    :-   </span>{% if s.trek_slot.slot_time != None %} {{ s.trek_slot.slot_time.isoformat() }} {% else %} Not yet scheduled. {% endif %}
+										</div>
+
+										<div>
+												
+											<span class="fs-6"><i class="bi bi-people"></i> Slot Size    :-   </span>{% if s.trek_slot.slot_limit != None %} {{ s.trek_slot.slot_limit }} {% else %} Not defined yet. {% endif %}										
+										</div>
+										<div class="text-end p-1">
+							<a href="{{ url_for("main.participants",id=s.trek_slot.slot_id) }}" class="btn btn-primary btn-sm"><i class="bi bi-people-fill"></i> Participants list</a>
+
+							<a href="{{ url_for('main.update_slot',id=s.trek_slot.slot_id) }}" class="btn btn-warning px-1 btn-sm "><i class="bi bi-pencil"></i> Update Slot Size</a>	
+
+
+						</div>
+
+
+
+										
+									</div>
+								{% endfor %}
+							{% else %}
+								<h4>No treks assigned yet.</h4>
+							{% endif %}
+					{% endif %}
+
+
+
+
+					{% if x==0 %}
+							{% if treks|length > 0 %}
+						<div class="card shadow-lg border-0">
+							<div class="card-body">
+								<div class="table-responsive">
+									<table class="table table-striped table-hover table-bordered align-middle">
+										<thead class="table-dark">
+											<tr>
+											<th>S.No</th>
+											<th>Trek Name</th>
+											<th>Location</th>
+											<th>Trek Date</th>
+											<th>Trek Time</th>
+											<th>Trek Duration</th>
+											<th>Status</th>
+											<th>Actions</th>
+											</tr>
+										</thead>
+										<tbody>
+											{% for s in treks%}
+												<tr>
+													<td>{{ loop.index }}</td>
+													<td>{{ s.trek_slot.treks.trek_name }}</td>
+													<td>{{ s.trek_slot.treks.location }}</td>
+													<td>{% if s.trek_slot.slot_date != None %} {{ s.trek_slot.slot_date.isoformat() }} {% else %} None {% endif %}</td>
+													<td>{% if s.trek_slot.slot_time != None %} {{ s.trek_slot.slot_time.isoformat() }} {% else %} None {% endif %}</td>
+													<td>{{ s.trek_slot.treks.duration }} day(s)</td>
+													<td>{{ s.trek_slot.status }}</td>
+													<td>
+								<a href="{{ url_for('main.update_slot_status_to_completed',id=s.aslot_id) }}" class="btn btn-warning btn-sm">
+								<i class="bi bi-pencil-square"></i>
+								Mark as Completed							
+								</a>																								</td>
+												</tr>
+											{% endfor %}
+										</tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+					{% else %}
+						<h4>No completed treks yet.</h4>
+					{% endif %}		
+
+					{% endif %}
+
+
+
+					
+					
+			</div>
+		</div>
+		</div>
+		</div>
+		</div>
+						
+	</body>
+</html>

@@ -14,16 +14,31 @@
 			<div class="card shadow-lg border-0 bg-light py-1">
 				<div class="card-header bg-dark text-white text-center">
 					<h4 class="mb-0">
+						{% if current_user.status == "waiting" %}
 						<i class="bi bi-hourglass"></i>
 								 Awaiting Approval
+						{% else %}
+								 Blacklisted
+						{% endif %}
+
 					</h4>
 				</div>
 				<div class="card-body p-4 text-center">
+					{% if current_user.status == "waiting" %}
 					<i class="bi bi-clock fs-1"></i>					
 					<h4>
 						Waiting for Admin approval
 					</h4>
 						Your application is under review.
+					{% else %}
+					<i class="bi bi-slash-circle text-danger fs-1"></i>
+					<h4 class="text-danger">
+						Account blacklisted
+					</h4>
+						<div class="py-1 ">Your account has been suspended by the administrator.You can not access it.</div>
+						<div class="py-1">Contact :- {{ email }}</div>
+					{% endif %}
+
 				</div>
 				<div class="text-center mt-4">
 					<a href="/" class="btn btn-outline-success px-4">Back to login</a>

@@ -28,6 +28,8 @@ def login():
         if login_userr.role  != request.form["role"]:
             flash("Enter correct role",'error')
             return redirect("/")
+        if login_userr.status == "blacklisted":
+            return render_template("pending_approval.html",email=User.query.filter(User.role=="admin").first().email)
         flash("Login Successful","success")
         login_user(login_userr)
         if(login_userr.role == "staff"):
@@ -186,7 +188,8 @@ def edit_profile(id):
         user.email=request.form["email"]
         user.phonenumber=request.form["phone"]
         user.emergency_number=request.form["emergency"]
-        user.gender=request.form["gender"]
+        if request.form["gender"] != "":
+            user.gender=request.form["gender"]
         db.session.commit()
         flash("Profile updated successfully","success")
         return redirect(url_for("main.profile",id=user.user_id))
@@ -263,7 +266,7 @@ def create_trek():
 @bp.route("/edit/trek/<int:id>",methods=["GET","POST"])
 def edit_trek(id):
     trek=Trek.query.filter(Trek.trek_id==id).first()
-    count=(sum(1 for slot in trek.slots if slot.status=="open"))
+    count=(sum(1 for slot in trek.slots if (slot.status not in ["completed","going"])))
     if request.method == "POST":
         trekk=Trek.query.filter(Trek.trek_name==(request.form["name"])).first()
         if trekk:
@@ -289,22 +292,7 @@ def edit_trek(id):
 @bp.route("/trek/<int:id>")
 def trek(id):
         trek=Trek.query.filter(Trek.trek_id==id).first()
-        for s in trek.slots:
-            if s.status != "cancelled":
-                if date.today() < trek.trek_book_start:
-                    s.status="opening soon"
-                elif date.today() >= trek.trek_book_start and date.today() < s.slot_date:
-                    s.status="open"
-                elif date.today() > (s.slot_date + timedelta(days=trek.duration)) :
-                    s.status="completed"
-                elif (date.today() == (s.slot_date + timedelta(days=trek.duration))) and (datetime.now().time()>=s.slot_time):
-                    s.status="completed"
-                elif (date.today() == (s.slot_date + timedelta(days=trek.duration))) and (datetime.now().time()<s.slot_time):
-                    s.status="going"
-                elif date.today() < (s.slot_date + timedelta(days=trek.duration)):
-                    s.status="going"
-                else:
-                    s.status=None
+        update_statuss(id)
         db.session.commit()
         return render_template("trek.html",trek=trek)
 
@@ -315,26 +303,66 @@ def update_slot(id):
         if(int(request.form["slot_limit"])<=0):
             flash("Slot Limit must be greater than 0","error")
             return redirect(url_for("main.trek",id=slot.trek_id))
-        if(date.fromisoformat(request.form["slot_date"]) < date.today()):
-            flash("Slot date cant be past","error")
-            return redirect(url_for("main.trek",id=slot.trek_id))
-        if(date.fromisoformat(request.form["slot_date"])==date.today() and  time.fromisoformat(request.form["slot_time"])<= datetime.now().time()):
-            flash("Slot time must be in future","error")
-            return redirect(url_for("main.trek",id=slot.trek_id))
-        s=Slots.query.filter(and_(Slots.slot_date == date.fromisoformat(request.form["slot_date"]),Slots.slot_time == time.fromisoformat(request.form["slot_time"]),Slots.trek_id==slot.trek_id,Slots.slot_id!=slot.slot_id)).first()
-        if s:
-            flash("Slot already exists","error")
-            return redirect(url_for("main.trek",id=slot.trek_id))
-        if(request.form["slot_status"] in ["open","cancelled","completed","going","opening soon"]):
-            slot.status=request.form["slot_status"]
+        if current_user.role=="admin":
+            if(date.fromisoformat(request.form["slot_date"]) < date.today()):
+                flash("Slot date cant be past","error")
+                return redirect(url_for("main.trek",id=slot.trek_id))
+            if(date.fromisoformat(request.form["slot_date"])==date.today() and  time.fromisoformat(request.form["slot_time"])<= datetime.now().time()):
+                flash("Slot time must be in future","error")
+                return redirect(url_for("main.trek",id=slot.trek_id))
+            s=Slots.query.filter(and_(Slots.slot_date == date.fromisoformat(request.form["slot_date"]),Slots.slot_time == time.fromisoformat(request.form["slot_time"]),Slots.trek_id==slot.trek_id,Slots.slot_id!=slot.slot_id)).first()
+            if s:
+                flash("Slot already exists","error")
+                return redirect(url_for("main.trek",id=slot.trek_id))
+            if(date.fromisoformat(request.form["slot_date"]) < slot.treks.trek_book_start):
+                flash("Choose date after trek booking starts","error")
+                return redirect(url_for("main.trek",id=slot.trek_id))
+            if(request.form["slot_status"] in ["open","cancelled","completed","going","opening soon"]):
+                slot.status=request.form["slot_status"]
+            slot.slot_date=date.fromisoformat(request.form["slot_date"])
+            slot.slot_time=time.fromisoformat(request.form["slot_time"])
+        else:
+            if(request.form["slot_status"]!=slot.status):
+                if(request.form["slot_status"] in ["completed","going"]):
+                    slot.status=request.form["slot_status"]
+                else:
+                    flash("You can only update status to completed or going","error")
+                    return render_template("update_slot.html",slot=slot)
         slot.slot_limit=int(request.form["slot_limit"])
-        slot.slot_date=date.fromisoformat(request.form["slot_date"])
-        slot.slot_time=time.fromisoformat(request.form["slot_time"])
         db.session.commit()
+        update_statuss(slot.treks.trek_id)
         flash("Slot updated","success")
-        return redirect(url_for("main.trek",id=slot.trek_id))
+        if current_user.role == "admin":
+            return redirect(url_for("main.trek",id=slot.trek_id))
+        else:
+            staff=Staff.query.join(Slots).filter(Slots.slot_id==id).first()
+            return redirect(url_for("main.staff_dashboard",id=staff.staff_id))
     else:
         return render_template("update_slot.html",slot=slot)
+
+def update_statuss(id):
+    trek=Trek.query.filter(Trek.trek_id==id).first()
+    for s in trek.slots:
+        if s.status != "cancelled" and s.slot_date != None and s.slot_time !=None:
+            if date.today() < trek.trek_book_start:
+                s.status="opening soon"
+            elif date.today() >= trek.trek_book_start and date.today() < s.slot_date:
+                s.status="open"
+            elif date.today() > (s.slot_date + timedelta(days=trek.duration)) :
+                s.status="completed"
+            elif (date.today() == (s.slot_date + timedelta(days=trek.duration))) and (datetime.now().time()>=s.slot_time):
+                s.status="completed"
+            elif (date.today() == (s.slot_date + timedelta(days=trek.duration))) and (datetime.now().time()<s.slot_time):
+                s.status="going"
+            elif date.today() < (s.slot_date + timedelta(days=trek.duration)):
+                s.status="going"
+            else:
+                s.status=None
+            db.session.commit()
+        if s.slot_date == None or s.slot_time ==None:
+            s.status=None
+            db.session.commit()
+
 
 @bp.route("/delete/trek/<int:id>")
 def delete_trek(id):
@@ -429,4 +457,40 @@ def user_dashboard(id):
 
 @bp.route("/staff/<int:id>")
 def staff_dashboard(id):
-    return render_template("staff_dashboard.html",id=id)
+    assigned_treks=Staff.query.join(Slots).filter(and_(Staff.staff_id==id,(Slots.status not in ["completed","going"]))).all()
+    completed_treks=Staff.query.join(Slots).filter(and_(Staff.staff_id==id,Slots.status=="completed")).all()
+    return render_template("staff_dashboard.html",assigned_treks=assigned_treks,completed_treks=completed_treks)
+
+@bp.route("/staff/<int:id>/assigned/treks")
+def assigned_treks(id):
+    treks=Staff.query.join(Slots).filter(Staff.staff_id==id).all()
+    assigned_treks=Staff.query.join(Slots).filter(and_(Staff.staff_id==id,(Slots.status not in ["completed","going"]))).all()
+    completed_treks=Staff.query.join(Slots).filter(and_(Staff.staff_id==id,Slots.status=="completed")).all()
+    return render_template("staff_treks.html",treks=treks,x=1,assigned_treks=assigned_treks,completed_treks=completed_treks)
+
+@bp.route("/staff/<int:id>/completed/treks")
+def completed_treks(id):
+    treks=Staff.query.join(Slots).filter(Staff.staff_id==id).all()
+    assigned_treks=Staff.query.join(Slots).filter(and_(Staff.staff_id==id,(Slots.status not in ["completed","going"]))).all()
+    completed_treks=Staff.query.join(Slots).filter(and_(Staff.staff_id==id,Slots.status=="completed")).all()
+    return render_template("staff_treks.html",treks=treks,x=0,assigned_treks=assigned_treks,completed_treks=completed_treks)
+
+@bp.route("/uppdate/slot/status/<int:id>")
+def update_slot_status_to_completed(id):
+    slot=Slots.query.filter(Slots.slot_id==id).first()
+    if slot.slot_date!=None:
+        if date.today() > slot.slot_date:
+            slot.status="completed"
+            db.session.commit()
+        if (date.today() == slot.slot_date) and (datetime.now().time() > slot.slot_time):
+            slot.status="completed"
+            db.session.commit()
+    return redirect(url_for("main.staff_dashboard",id=Staff.query.filter(Staff.aslot_id==id).first().staff_id))
+
+@bp.route("/participants/<int:id>")
+def participants(id):
+    l=Booking.query.filter(Booking.slot_id==id).all()
+    participants=[]
+    for y in l:
+        participants.append(User.query.filter(User.user_id==y.user_id).first())
+    return render_template("trek_participants.html",users=participants,trek=Trek.query.filter(Trek.trek_id==Slots.query.filter(Slots.slot_id==id).first().trek_id).first(),slot=id)

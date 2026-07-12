@@ -23,9 +23,28 @@
 					<h4 class="text-end">
 						Welcome,{{ current_user.name }}					
 					</h4>
+					{% with messages=get_flashed_messages(with_categories=true) %}
+					{% if messages %}
+					{% for category,message in messages %}
+					<div class="
+						{% if category == "success" %}
+							alert alert-success
+						{% elif category == "info" %}
+							alert alert-info
+						{% elif category == "warning" %}
+							alert alert-warning
+						{% elif category == "error" %}
+							alert alert-danger
+						{% else %}
+							alert alert-secondary
+						{% endif %}">{{ message }}
+					</div>
+					{% endfor %}
+					{% endif %}
+					{% endwith %}
 					<span class="d-flex gap-5 py-1 px-5 border-primary border rounded-pill">
 					
-						<a href="/admin" class="nav-link text-primary fw-semibold">Home</a>
+						<a href="/admin" class="nav-link text-dark fw-semibold">Home</a>
 					
 						<a href="/users" class="nav-link text-primary fw-semibold">Users</a>
 					
@@ -41,7 +60,7 @@
 				</nav>
 				<div class="row mb-4 py-3">
 					<div class="col-md-3">
-						<div class="card shadow bg-success-subtle text-success border-success border rounded">
+						<div class="card shadow bg-success text-light border rounded">
 							<div class="card-body text-center fw-semibold">
 								<h2>{{ Treks }}</h2>
 								<p class="mb-0">Total Treks</p>
@@ -49,7 +68,7 @@
 						</div>
 					</div>
 					<div class="col-md-3">
-						<div class="card shadow bg-success-subtle text-success border-success border rounded">
+						<div class="card shadow bg-success text-light border rounded">
 							<div class="card-body text-center fw-semibold">
 								<h2>{{ Users }}</h2>
 								<p class="mb-0">Users</p>
@@ -57,7 +76,7 @@
 						</div>
 					</div>
 					<div class="col-md-3">
-						<div class="card shadow bg-success-subtle text-success border-success border rounded">
+						<div class="card shadow bg-success text-light border rounded">
 							<div class="card-body text-center fw-semibold">
 								<h2>{{ Staff }}</h2>
 								<p class="mb-0">Staff</p>
@@ -65,10 +84,10 @@
 						</div>
 					</div>
 					<div class="col-md-3">
-						<div class="card shadow bg-success-subtle text-success border-success border rounded">
+						<div class="card shadow bg-success text-light border rounded">
 							<div class="card-body text-center fw-semibold">
 								<h2>{{ Bookings }}</h2>
-								<p class="mb-0">Bookings</p>
+								<p class="mb-0">Total Bookings</p>
 							</div>
 						</div>
 					</div>

@@ -52,11 +52,11 @@
 						</div>
 						<div>
 							<label class="form-label fw-semibold">Slot Date</label>
-							<input type="date" name="slot_date" class="form-control" {% if slot.slot_date!=None %}value="{{ slot.slot_date.isoformat() }}" {% endif %} required>
+							<input type="date" name="slot_date" class="form-control" {% if slot.slot_date!=None %}value="{{ slot.slot_date.isoformat() }}" {% endif %} {% if current_user.role == "admin" %} required {% else %} disabled {% endif %}>
 						</div>
 						<div>
 							<label class="form-label fw-semibold">Slot Time</label>
-							<input type="time" name="slot_time" class="form-control" {% if slot.slot_time!=None %}value="{{ slot.slot_time.isoformat() }}" {% endif %} required>
+							<input type="time" name="slot_time" class="form-control" {% if slot.slot_time!=None %}value="{{ slot.slot_time.isoformat() }}" {% endif %} {% if current_user.role == "admin" %} required {% else %} disabled {% endif %}>
 						</div>
 						<div>
 							<label class="form-label fw-semibold">Slot Limit</label>
@@ -64,7 +64,7 @@
 						</div>
 						<div>
 							<label class="form-label fw-semibold">Slot status</label>
-							<input type="text" name="slot_status" class="form-control" {% if slot.slot_status!=None %}value="{{ slot.status }}" {% endif %} required>
+							<input type="text" name="slot_status" class="form-control" {% if slot.slot_status!=None %}value="{{ slot.status }}" {% endif %} {% if current_user.role == "admin" %} required {% endif %}>
 						</div>
 						<div class="text-center mt-3">
 							<button type="submit" class="btn btn-success w-80">
