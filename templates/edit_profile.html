@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Register</title>
+		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    		<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+		<link rel="stylesheet"href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+	
+	</head>
+	<body class="bg-warning-subtle">
+	<div class="container py-1">
+		<div class="row justify-content-center py-5">
+		<div class="col-md-6 col-lg-5">
+			<div class="card shadow-lg border-0 bg-light py-1">
+				<div class="card-header bg-dark text-white text-center">
+					<h4 class="mb-0">
+						<i class="bi bi-person-circle"></i>
+								{% if user.role=="admin" %}
+								Admin Proile Update
+								{% elif user.role=="staff" %}
+								Staff Proile Update
+								{% else %}
+								User Proile Update
+								{% endif %}
+					</h4>
+				</div>
+				<div class="card-body p-4">
+					<h5 class="text-center text-warning-emphasis fw-bold py-3">
+							{% if current_user.role == "admin" %} Admin updating
+							{% else %}Self updating{% endif %}
+					</h5>
+					{% with messages=get_flashed_messages(with_categories=true) %}
+					{% if messages %}
+					{% for category,message in messages %}
+					<div class="
+						{% if category == "success" %}
+							alert alert-success
+						{% elif category == "info" %}
+							alert alert-info
+						{% elif category == "warning" %}
+							alert alert-warning
+						{% elif category == "error" %}
+							alert alert-danger
+						{% else %}
+							alert alert-secondary
+						{% endif %}">{{ message }}
+					</div>
+					{% endfor %}
+					{% endif %}
+					{% endwith %}
+					<form action="{{ url_for('main.edit_profile',id=user.user_id) }}" method="POST" name="form">
+						<div>
+							<label class="form-label fw-semibold">Full Name</label>
+							<input type="text" name="name" class="form-control" value={{ user.name }} required>
+						</div>
+						<div>
+							<label class="form-label fw-semibold">Username</label>
+							<input type="text" name="user_name" class="form-control" value={{ user.user_name }}>
+						</div>
+						<div>
+							<label class="form-label fw-semibold">Email</label>
+							<input type="email" name="email" class="form-control" value={{ user.email }} required>
+						</div>
+						<div>
+							<label class="form-label fw-semibold">Phone Number</label>
+							<input type="tel" name="phone" class="form-control" required value={{ user.phonenumber }} required>
+						</div>
+						<div>
+							<label class="form-label fw-semibold">Emergency Number</label>
+							<input type="tel" name="emergency" class="form-control" value={{ user.emergency_number }} required>
+						</div>
+						<div>
+							<label class="form-label fw-semibold">Gender</label>
+							<select name="gender" class="form-select" required>
+								<option value="">Select Gender</option>
+								<option value="male">Male</option>
+								<option value="female">Female</option>
+								<option value="transgender">Can't say</option>
+							</select>
+						</div>
+
+
+						<div class="text-center mt-3">
+							<button type="submit" class="btn btn-success w-100">
+								Edit
+							</button>
+						</div>
+					</form>
+					<div class="text-center">
+					<span class="px-2">
+						<a href="{{ url_for("main.profile",id=user.user_id) }}">Back</a>
+					</span>
+					</div>
+				</div>
+			</div>
+		</div>
+		</div>
+	</div>
+	</body>
+</html>

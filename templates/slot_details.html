@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Admin Dashboard</title>
+		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    		<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+		<link rel="stylesheet"href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+		<style>
+		</style>
+	</head>
+	<body class="bg-warning-subtle px-0">
+	<div class="container-fluid py-2 px-0">
+		<div class="row justify-content-center">
+		<div class="col-md-10 col-lg-11">
+			<div class="card shadow-lg border-0 py-1">
+				<div class="card-header bg-dark text-white">
+					<h4 class="mb-0">
+								 {{ slot.treks.trek_name }} Trek Slot
+					</h4>
+				</div>
+				<div class="card-body">
+				<nav class="bg-light">					
+					<h4 class="text-end">
+						Welcome,{{ current_user.name }}					
+					</h4>
+					{% with messages=get_flashed_messages(with_categories=true) %}
+					{% if messages %}
+					{% for category,message in messages %}
+					<div class="
+						{% if category == "success" %}
+							alert alert-success
+						{% elif category == "info" %}
+							alert alert-info
+						{% elif category == "warning" %}
+							alert alert-warning
+						{% elif category == "error" %}
+							alert alert-danger
+						{% else %}
+							alert alert-secondary
+						{% endif %}">{{ message }}
+					</div>
+					{% endfor %}
+					{% endif %}
+					{% endwith %}
+					<span class="d-flex gap-5 py-1 px-5 border-primary border rounded-pill">
+					
+						<a href="/admin" class="nav-link text-primary fw-semibold">Home</a>
+					
+						<a href="/users" class="nav-link text-primary fw-semibold">Users</a>
+					
+						<a href="/treks" class="nav-link text-primary fw-semibold">Treks</a>
+					
+						<a href="/staff" class="nav-link text-primary fw-semibold">Staff</a>
+						
+						<a href="{{ url_for("main.profile",id=current_user.user_id) }}" class="nav-link text-primary fw-semibold">Profile</a>
+				
+						<a href="/logout" class="nav-link text-primary fw-semibold">Logout</a>
+					
+					</span>
+				</nav>
+					<div class="row mb-3 align-items-center">
+					<div class="col">
+					<h4 class="mb-0 py-3 text-decoration-underline">
+						<i class="bi bi-calendar-event"></i>
+						Slot Details
+					</h4></div><div class="col-auto">
+					<div class="text-end">
+					<a href="{{ url_for('main.update_slot',id=slot.slot_id) }}" class="btn btn-dark btn-sm">
+							<i class="bi bi-pencil-square"></i>
+								Edit							
+					</a>
+					<a href="{{ url_for('main.assign_staff_to_slot',id=slot.slot_id) }}" class="btn btn-success px-1 btn-sm "><i class="bi bi-person"></i>
+Assign Staff</a>	
+					<a href="{{ url_for('main.delete_slot',id=slot.slot_id) }}" class="btn btn-danger px-1 btn-sm "><i class="bi bi-trash"></i>
+Delete Slot</a>	
+
+					</div>
+					</div>
+					</div>	
+						<div class="card shadow-lg border-0">
+							<div class="card-body">
+								<div class="table-responsive">
+									<table class="table table-striped table-hover table-bordered align-middle">
+											<tr>
+											<th>Slot Id</th>
+											<td>{{ slot.slot_id }}</td>
+											</tr>
+											<tr>
+											<th>Trek Name</th>
+											<td>{{ slot.treks.trek_name }}</td>
+											</tr>
+											<tr>
+											<th>Slot Date</th>
+											<td>{{ slot.slot_date }}</td>
+											</tr>
+											<tr>
+											<th>Slot Time</th>
+											<td>{{ slot.slot_time }}</td>
+											</tr>
+											<tr>
+											<th>Slot Limit</th>
+											<td>{{ slot.slot_limit }} hrs</td>
+											</tr>
+											<tr>
+											<th>Trek Description</th>
+											<td>{{ slot.treks.description }}</td>
+											</tr>
+									</table>
+								</div>
+							<h4 class="mt-4 mb-3 text-decoration-underline">
+    								<i class="bi bi-person"></i>
+    								Trek Slot Staff
+							</h4>
+						
+							{% if slot.slotstaff|length >0 %}
+								
+				
+
+									<div class="card shadow-lg border-0">
+									<div class="card-body">
+									<div class="table-responsive">
+									<table class="table table-striped table-hover table-bordered align-middle">
+										<thead class="table-dark">
+											<tr>
+											<th>S.No</th>
+											<th>Name</th>
+											<th>Email</th>
+											<th>Actions</th>
+											</tr>
+										</thead>
+										<tbody>
+									{% for s in slot.slotstaff %}
+												
+												<tr>
+													<td>{{ loop.index }}</td>
+													<td><a href="{{ url_for("main.profile",id=s.staff_id) }}">{{ s.user.name }}</a></td>
+													<td>{{ s.user.email }}</td>
+													<td><a href="{{ url_for('main.remove_staff',staff_id=s.staff_id,slot_id=slot.slot_id) }}" class="btn btn-dark btn-sm">
+								<i class="bi bi-x-circle"></i>
+								Remove
+							</a></a>
+
+
+													</td>
+												</tr>
+
+									{% endfor %}
+										</tbody>
+										</table>
+										</div>
+										</div>
+										</div>
+							{% else %}
+								{% if slot.slot_date == None %}
+								Slot not scheduled.
+								{% elif slot.slot_time == None %}
+								Slot timings not yet decided.
+								{% else %}
+								No staff assigned for {{ slot.treks.trek_name }} trek on {{ slot.slot_date }} at {{ slot.slot_time }} yet.
+							{% endif %}
+							{% endif %}
+
+
+
+							</div>
+						</div>
+				</div>
+			</div>
+		</div>
+		</div>
+	</div>	
+	</body>
+</html>

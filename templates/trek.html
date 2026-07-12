@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Admin Dashboard</title>
+		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    		<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+		<link rel="stylesheet"href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+		<style>
+		</style>
+	</head>
+	<body class="bg-warning-subtle px-0">
+	<div class="container-fluid py-2 px-0">
+		<div class="row justify-content-center">
+		<div class="col-md-10 col-lg-11">
+			<div class="card shadow-lg border-0 py-1">
+				<div class="card-header bg-dark text-white">
+					<h4 class="mb-0">
+								 {{ trek.trek_name }} Trek
+					</h4>
+				</div>
+				<div class="card-body">
+				<nav class="bg-light">					
+					<h4 class="text-end">
+						Welcome,{{ current_user.name }}					
+					</h4>
+					{% with messages=get_flashed_messages(with_categories=true) %}
+					{% if messages %}
+					{% for category,message in messages %}
+					<div class="
+						{% if category == "success" %}
+							alert alert-success
+						{% elif category == "info" %}
+							alert alert-info
+						{% elif category == "warning" %}
+							alert alert-warning
+						{% elif category == "error" %}
+							alert alert-danger
+						{% else %}
+							alert alert-secondary
+						{% endif %}">{{ message }}
+					</div>
+					{% endfor %}
+					{% endif %}
+					{% endwith %}
+					<span class="d-flex gap-5 py-1 px-5 border-primary border rounded-pill">
+					
+						<a href="/admin" class="nav-link text-primary fw-semibold">Home</a>
+					
+						<a href="/users" class="nav-link text-primary fw-semibold">Users</a>
+					
+						<a href="/treks" class="nav-link text-primary fw-semibold">Treks</a>
+					
+						<a href="/staff" class="nav-link text-primary fw-semibold">Staff</a>
+						
+						<a href="{{ url_for("main.profile",id=current_user.user_id) }}" class="nav-link text-primary fw-semibold">Profile</a>
+				
+						<a href="/logout" class="nav-link text-primary fw-semibold">Logout</a>
+					
+					</span>
+				</nav>
+					<div class="row mb-3 align-items-center">
+					<div class="col">
+					<h4 class="mb-0 py-3 text-decoration-underline">
+						<i class="bi bi-tree-fill"></i>
+						Trek Details
+					</h4></div><div class="col-auto">
+					<div class="text-end">
+					<a href="{{ url_for('main.edit_trek',id=trek.trek_id) }}" class="btn btn-success btn-sm">
+							<i class="bi bi-pencil-square"></i>
+								Edit							
+					</a></div>
+					</div>
+					</div>	
+						<div class="card shadow-lg border-0">
+							<div class="card-body">
+								<div class="table-responsive">
+									<table class="table table-striped table-hover table-bordered align-middle">
+											<tr>
+											<th>Trek Id</th>
+											<td>{{ trek.trek_id }}</td>
+											</tr>
+											<tr>
+											<th>Trek Name</th>
+											<td>{{ trek.trek_name }}</td>
+											</tr>
+											<tr>
+											<th>Location</th>
+											<td>{{ trek.location }}</td>
+											</tr>
+											<tr>
+											<th>Difficulty</th>
+											<td>{{ trek.difficulty }}</td>
+											</tr>
+											<tr>
+											<th>Duration</th>
+											<td>{{ trek.duration }} day(s)</td>
+											</tr>
+											<tr>
+											<th>Cost Per Person</th>
+											<td>Rs. {{ trek.cost }}</td>
+											</tr>
+											<tr>
+											<th>Trek Booking Start Date</th>
+											<td>{{ trek.trek_book_start }}</td>
+											</tr>
+											<tr>
+											<th>Trek Booking End Date</th>
+											<td>{{ trek.trek_book_end }}</td>
+											</tr>
+											<tr>
+											<th>Report Before</th>
+											<td>{{ trek.report_before }} hrs</td>
+											</tr>
+											<tr>
+											<th>Description</th>
+											<td>{{ trek.description }}</td>
+											</tr>
+									</table>
+								</div>
+							<h4 class="mt-4 mb-3 text-decoration-underline">
+    								<i class="bi bi-calendar-event"></i>
+    								Trek Slots
+							</h4>
+							{% if trek.slots|length >0 %}
+							{% for s in trek.slots %}
+							<div class="card shadow-lg border-dark border rounded-pill mb-3">
+								<div class="card-body">
+									<div class="d-flex gap-5 px-3">
+										<span>
+											<span class="fw-semibold text-decoration-underline">Date:</span>
+											{% if s.slot_date == None %}
+											<span> - </span>
+											{% else %}
+											<span>{{ s.slot_date.isoformat() }}</span>
+											{% endif %}
+
+										</span>
+										<span>
+											<span class="fw-semibold text-decoration-underline">Time:</span>
+											{% if s.slot_date == None %}
+											<span> - </span>
+											{% else %}
+											<span>{{ s.slot_time.isoformat() }}</span>
+											{% endif %}
+
+										</span>
+										<span>
+											<span class="fw-semibold text-decoration-underline">Limit:</span>
+											{% if s.slot_date == None %}
+											<span> - </span>
+											{% else %}
+											<span>{{ s.slot_limit }}</span>
+											{% endif %}
+
+										</span>
+									</div>
+									<div class="text-end fw-semibold text-dark row">
+										<span class="col">
+											<span class="fw-semibold text-decoration-underline">Status:</span>
+											<span>{{ s.status }}</span>
+
+										</span>
+								<span class="col-auto">
+								<a href="{{ url_for('main.update_slot',id=s.slot_id) }}" class="btn btn-warning px-1 btn-sm "><i class="bi bi-pencil"></i>Update Slot</a>	
+								<a href="{{ url_for('main.slot_info',id=s.slot_id) }}" class="btn btn-success btn-sm px-1"><i class="bi bi-person"></i>Assign Staff</a>
+								<a href="{{ url_for('main.delete_slot',id=s.slot_id) }}" class="btn btn-danger px-1 btn-sm "><i class="bi bi-trash"></i>Delete Slot</a>	
+
+									</span></div>
+
+								</div>
+							</div>
+							{% endfor %}
+							{% else %}
+								No slots for {{ trek.trek_name }} trek.
+							{% endif %}
+
+							</div>
+						</div>
+				</div>
+			</div>
+		</div>
+		</div>
+	</div>	
+	</body>
+</html

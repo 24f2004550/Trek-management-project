@@ -33,7 +33,7 @@
 					
 						<a href="/staff" class="nav-link text-primary fw-semibold">Staff</a>
 						
-						<a href="/profile" class="nav-link text-primary fw-semibold">Profile</a>
+						<a href="{{ url_for("main.profile",id=current_user.user_id) }}" class="nav-link text-primary fw-semibold">Profile</a>
 				
 						<a href="/logout" class="nav-link text-primary fw-semibold">Logout</a>
 					

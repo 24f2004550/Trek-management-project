@@ -23,6 +23,25 @@
 					<h4 class="text-end">
 						Welcome,{{ current_user.name }}					
 					</h4>
+					{% with messages=get_flashed_messages(with_categories=true) %}
+					{% if messages %}
+					{% for category,message in messages %}
+					<div class="
+						{% if category == "success" %}
+							alert alert-success
+						{% elif category == "info" %}
+							alert alert-info
+						{% elif category == "warning" %}
+							alert alert-warning
+						{% elif category == "error" %}
+							alert alert-danger
+						{% else %}
+							alert alert-secondary
+						{% endif %}">{{ message }}
+					</div>
+					{% endfor %}
+					{% endif %}
+					{% endwith %}
 					<span class="d-flex gap-5 py-1 px-5 border-primary border rounded-pill">
 					
 						<a href="/admin" class="nav-link text-primary fw-semibold">Home</a>
@@ -31,9 +50,9 @@
 					
 						<a href="/treks" class="nav-link text-primary fw-semibold">Treks</a>
 					
-						<a href="/staff" class="nav-link text-primary fw-semibold">Staff</a>
+						<a href="/staff" class="nav-link text-success fw-semibold">Staff</a>
 						
-						<a href="/profile" class="nav-link text-primary fw-semibold">Profile</a>
+						<a href="{{ url_for("main.profile",id=current_user.user_id) }}" class="nav-link text-primary fw-semibold">Profile</a>
 				
 						<a href="/logout" class="nav-link text-primary fw-semibold">Logout</a>
 					
@@ -62,7 +81,7 @@
 											{% for s in staff%}
 												<tr>
 													<td>{{ loop.index }}</td>
-													<td>{{ s.name }}</td>
+													<td><a href="{{ url_for("main.profile",id=s.user_id) }}"></a>{{ s.name }}</td>
 													<td>{{ s.email }}</td>
 													<td>{{ s.phonenumber }}</td>
 													<td>
@@ -90,25 +109,29 @@
 													</td>
 													<td>
 														{% if s.status == "waiting" %}
-							<a href="{{ url_for('bp.approve',id=s.user_id) }}" class="btn btn-secondary btn-sm">
+							<a href="{{ url_for('main.approve_staff',id=s.user_id) }}" class="btn btn-secondary btn-sm">
 								<i class="bi bi-check-circle"></i>
 								Approve
 							</a>
 														{% endif %}
 														{% if s.status == "blacklisted" %}
-							<a href="{{ url_for('bp.restore',id=s.user_id) }}" class="btn btn-success btn-sm">
+							<a href="{{ url_for('main.restore',id=s.user_id) }}" class="btn btn-success btn-sm">
 								<i class="bi bi-check-circle"></i>
 								Restore
 							</a>	
 														{% else %}
-							<a href="{{ url_for('bp.blacklist',id=s.user_id) }}" class="btn btn-dark btn-sm">
+							<a href="{{ url_for('main.blacklist',id=s.user_id) }}" class="btn btn-dark btn-sm">
 								<i class="bi bi-slash-circle"></i>
 								Blacklist
 							</a>
 														{% endif %}
-							<a href="{{ url_for('bp.delete',id=s.user_id) }}" class="btn btn-danger btn-sm">
+							<a href="{{ url_for('main.delete',id=s.user_id) }}" class="btn btn-danger btn-sm">
 								<i class="bi bi-trash"></i>
+								{% if s.status == "waiting" %}
+								Reject
+								{% else %}
 								Delete
+								{% endif %}
 							</a>
 													</td>
 												</tr>
