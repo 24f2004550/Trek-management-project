@@ -96,41 +96,44 @@
 					</div>
 					
 					{% if x==1 %}
-							{% if treks|length > 0 %}
-								{% for s in treks %}
-									<div class="card border rounded border-dark bg-secondary-subtle">
-										<div>
+							{% if assigned_treks|length > 0 %}
+								{% for s in assigned_treks %}
+									<div class="card border rounded border-dark bg-secondary-subtle fw-semibold mb-4">
+										<span class="row p-2">
+										<span class="col-md-3">
 												
-											<span class="fs-6"><i class="bi bi-tree-fill"></i> Trek Name :- </span>{{ s.trek_slot.treks.trek_name }}
-										</div>
-										<div>
+											<img src="{{ url_for('static',filename='trek_logo.png') }}" alt="Trek Manager logo" width="40"> Trek Name :-{{ s.trek_slot.treks.trek_name }}
+										</span>
+										<span class="col-md-3">
 												
-											<span class="fs-6"><i class="bi bi-geo-alt"></i> Location    :-  </span>{{ s.trek_slot.treks.location }}
-										</div>
-										<div>
+											 <i class="bi bi-geo-alt text-danger"></i> Location    :-  {{ s.trek_slot.treks.location }}
+										</span>
+										<span class="col-md-3">
 												
-											<span class="fs-6"><i class="bi bi-lightning-fill"></i> Difficulty    :-   </span>{{ s.trek_slot.treks.difficulty }}
-										</div>
-										<div>
+											<i class="bi bi-lightning-fill text-warning"></i> Difficulty    :-   {{ s.trek_slot.treks.difficulty }}
+										</span>
+										<span class="col-md-3">
 												
-											<span class="fs-6"><i class="bi bi-calendar-event"></i> Date    :-   </span>{% if s.trek_slot.slot_date != None %} {{ s.trek_slot.slot_date.isoformat() }} {% else %} Not yet decided. {% endif %}
-										</div>
-										<div>
+											<i class="bi bi-calendar-event"></i> Date    :-  {% if s.trek_slot.slot_date != None %} {{ s.trek_slot.slot_date.isoformat() }} {% else %} Not yet decided. {% endif %}
+										</span>
+										</span>
+										<span class="row p-2">
+										<span class="col-md-3">
+											
+											<i class="bi bi-clock-fill"></i>  Time    :-   {% if s.trek_slot.slot_time != None %} {{ s.trek_slot.slot_time.isoformat() }} {% else %} Not yet scheduled. {% endif %}
+										
+										</span>
+										<span class="col-md-3">
 												
-											<span class="fs-6"><i class="bi bi-clock-fill"></i> Time    :-   </span>{% if s.trek_slot.slot_time != None %} {{ s.trek_slot.slot_time.isoformat() }} {% else %} Not yet scheduled. {% endif %}
-										</div>
-
-										<div>
-												
-											<span class="fs-6"><i class="bi bi-people"></i> Slot Size    :-   </span>{% if s.trek_slot.slot_limit != None %} {{ s.trek_slot.slot_limit }} {% else %} Not defined yet. {% endif %}										
-										</div>
-										<div class="text-end p-1">
+											<i class="bi bi-people"></i> Slot Size    :-  {% if s.trek_slot.slot_id in slots_size.keys() %} {{ slots_size[s.trek_slot.slot_id] }} {% else %} Not defined yet. {% endif %}										
+										</span></span>
+										<span class="text-end p-1">
 							<a href="{{ url_for("main.participants",id=s.trek_slot.slot_id) }}" class="btn btn-primary btn-sm"><i class="bi bi-people-fill"></i> Participants list</a>
 
 							<a href="{{ url_for('main.update_slot',id=s.trek_slot.slot_id) }}" class="btn btn-warning px-1 btn-sm "><i class="bi bi-pencil"></i> Update Slot Size</a>	
 
 
-						</div>
+						</span>
 
 
 
@@ -146,7 +149,7 @@
 
 
 					{% if x==0 %}
-							{% if treks|length > 0 %}
+							{% if completed_treks|length > 0 %}
 						<div class="card shadow-lg border-0">
 							<div class="card-body">
 								<div class="table-responsive">
@@ -164,7 +167,7 @@
 											</tr>
 										</thead>
 										<tbody>
-											{% for s in treks%}
+											{% for s in completed_treks%}
 												<tr>
 													<td>{{ loop.index }}</td>
 													<td>{{ s.trek_slot.treks.trek_name }}</td>

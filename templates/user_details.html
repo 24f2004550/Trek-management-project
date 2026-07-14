@@ -51,6 +51,8 @@
 						<a href="/treks" class="nav-link text-primary fw-semibold">Treks</a>
 					
 						<a href="/staff" class="nav-link text-primary fw-semibold">Staff</a>
+
+						<a href="/all/bookings" class="nav-link text-primary fw-semibold">All bookings</a>
 						
 						<a href="{{ url_for("main.profile",id=current_user.user_id) }}" class="nav-link text-primary fw-semibold">Profile</a>
 				
@@ -81,6 +83,7 @@
 											<th>Email</th>
 											<th>Phone</th>
 											<th>Total Bookings</th>
+											<th>Status</th>
 											<th>Actions</th>
 											</tr>
 										</thead>
@@ -93,11 +96,40 @@
 													<td>{{ s.phonenumber }}</td>
 													<td>{{ s.bookings|length }}</td>
 													<td>
+													{% if (s.status == "approved") or (s.status == "active") %}
+													<span class="badge bg-success">
+													<i class="bi bi-check-circle"></i>
+													Active
+													</span>
+														{% elif s.status == "waiting" %}
+													<span class="badge bg-warning text-dark">
+													<i class="bi bi-clock"></i>
+													Waiting
+													</span>
+														{% elif s.status == "blacklisted" %}
+													<span class="badge bg-dark text-light">
+													<i class="bi bi-slash-circle-fill"></i>
+													Blacklisted
+													</span>
+														{% else %}
+													<span class="badge bg-secondary">
+													<i class="bi bi-info-circle"></i>
+													{{ s.status }}
+													</span>
+														{% endif %}
+
+													</td>
+													<td>
 														{% if s.status == "blacklisted" %}
 							<a href="{{ url_for('main.restore',id=s.user_id) }}" class="btn btn-success btn-sm">
 								<i class="bi bi-check-circle"></i>
 								Restore
 							</a>	
+														{% elif s.status == "waiting" %}
+							<a href="{{ url_for('main.approve_staff',id=s.user_id) }}" class="btn btn-success btn-sm">
+								<i class="bi bi-check-circle"></i>
+								Activate
+							</a>
 														{% else %}
 							<a href="{{ url_for('main.blacklist',id=s.user_id) }}" class="btn btn-dark btn-sm">
 								<i class="bi bi-slash-circle"></i>

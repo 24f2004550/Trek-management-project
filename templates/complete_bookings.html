@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Complete Bookings</title>
+		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    		<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+		<link rel="stylesheet"href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+		<style>
+		</style>
+	</head>
+	<body class="bg-warning-subtle px-0">
+	<div class="container-fluid py-2 px-0">
+		<div class="row justify-content-center">
+		<div class="col-md-10 col-lg-11">
+			<div class="card shadow-lg border-0 py-1">
+				<div class="card-header bg-dark text-white">
+					<h4 class="mb-0">
+								 Admin Dashboard
+					</h4>
+				</div>
+				<div class="card-body">
+				<nav class="bg-light">					
+					<h4 class="text-end">
+						Welcome,{{ current_user.name }}					
+					</h4>
+					{% with messages=get_flashed_messages(with_categories=true) %}
+					{% if messages %}
+					{% for category,message in messages %}
+					<div class="
+						{% if category == "success" %}
+							alert alert-success
+						{% elif category == "info" %}
+							alert alert-info
+						{% elif category == "warning" %}
+							alert alert-warning
+						{% elif category == "error" %}
+							alert alert-danger
+						{% else %}
+							alert alert-secondary
+						{% endif %}">{{ message }}
+					</div>
+					{% endfor %}
+					{% endif %}
+					{% endwith %}
+					<span class="d-flex gap-5 py-1 px-5 border-primary border rounded-pill">
+					
+						<a href="/admin" class="nav-link text-primary fw-semibold">Home</a>
+					
+						<a href="/users" class="nav-link text-primary fw-semibold">Users</a>
+					
+						<a href="/treks" class="nav-link text-primary fw-semibold">Treks</a>
+					
+						<a href="/staff" class="nav-link text-primary fw-semibold">Staff</a>
+						
+						<a href="/all/bookings" class="nav-link text-dark fw-semibold">All bookings</a>
+						
+						<a href="{{ url_for("main.profile",id=current_user.user_id) }}" class="nav-link text-primary fw-semibold">Profile</a>
+				
+						<a href="/logout" class="nav-link text-primary fw-semibold">Logout</a>
+					
+					</span>
+				</nav>
+					<div class="text-end p-2">
+					<div class="btn btn-secondary">
+								<h5>Total Bookings:-{{ bookings|length }}</h5>
+					</div>
+					
+					</div>
+				
+				<h3 class="text-decoration-underline text-dark p-2">Recent Bookings</h3>
+				
+
+
+					{% if bookings|length > 0 %}
+						<div class="card shadow-lg border-0">
+							<div class="card-body">
+								<div class="table-responsive">
+									<table class="table table-striped table-hover table-bordered align-middle">
+										<thead class="table-dark">
+											<tr>
+											<th>S No.</th>
+											<th>Booking ID</th>
+											<th>Booking Date</th>
+											<th>Trek Booked</th>
+											<th>Slot Booked</th>
+											<th>Slot Timings</th>
+											<th>Slots Booked</th>
+											<th>Trek Status</th>
+											<th>Actions</th>
+											</tr>
+										</thead>
+										<tbody>
+											{% for s in bookings%}
+												<tr>
+													<td>{{ loop.index }}</td>																<td>{{ s.booking_id }}</td>
+													<td>{{ s.booking_date }}</td>
+													<td>{{ s.slot.treks.trek_name }}															<td>{{ s.slot.slot_date }}</td>
+													<td>{{ s.slot.slot_time }}</td>
+													<td>{{ s.slots_booked }}</td>
+													{% if s.status !="cancelled" %}
+													<td>{{ s.slot.status }}</td>
+													{% else %}
+													<td>{{ s.status }}</td>
+													{% endif %}
+													<td>
+														{% if s.slot.status not in ["completed","going"] and s.status!="cancelled" %}
+							<a href="{{ url_for('main.cancel_booking',u_id=s.user_id,b_id=s.booking_id) }}" class="btn btn-danger btn-sm">
+								<i class="bi bi-x-square"></i>
+								Cancel Booking
+							</a>	
+								{% elif s.slot.status =="completed" %}	
+								<a href="{{ url_for('main.review_booking',u_id=current_user.user_id,b_id=s.booking_id) }}" class="btn btn-success btn-sm">
+								<i class="bi bi-check-square"></i>
+								Review Completed Trek</a>
+								{% elif s.status == "cancelled" %}	
+								<span class="btn btn-secondary btn-sm">
+								<i class="bi bi-x-circle"></i>
+								Cancelled</span>
+								{% else %}	
+								<span class="btn btn-warning btn-sm">
+								<i class="bi bi-person-walking"></i>
+								Ongoing Trek</span>
+	
+
+														{% endif %}
+													</td>
+												</tr>
+											{% endfor %}
+										</tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+					{% else %}
+						No bookings yet.
+					{% endif %}
+
+
+
+
+
+
+
+
+
+
+
+				</div>
+			</div>
+		</div>
+		</div>
+	</div>	
+	</body>
+</html>

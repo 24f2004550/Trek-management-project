@@ -19,12 +19,35 @@
 					</h4>
 				</div>
 				<div class="card-body">
+					{% if current_user.role == "admin" %}
+					<nav class="bg-light">
+					<span class="d-flex gap-5 py-1 px-5 border-primary border rounded-pill">
 					
+						<a href="/admin" class="nav-link text-primary fw-semibold">Home</a>
+					
+						<a href="/users" class="nav-link text-primary fw-semibold">Users</a>
+					
+						<a href="/treks" class="nav-link text-primary fw-semibold">Treks</a>
+					
+						<a href="/staff" class="nav-link text-primary fw-semibold">Staff</a>
+
+						<a href="/all/bookings" class="nav-link text-primary fw-semibold">All bookings</a>
+
+						
+						<a href="{{ url_for("main.profile",id=current_user.user_id) }}" class="nav-link text-primary fw-semibold">Profile</a>
+				
+						<a href="/logout" class="nav-link text-primary fw-semibold">Logout</a>
+					
+					</span>
+					</nav>
+					{% else %}
 					<div class="row border-bottom pb-2">
 						<h4 class="col">
 							Welcome , {{  current_user.name }}
 						</h4>
 						<div class="col-auto">
+							<a href="{{ url_for("main.staff_dashboard",id=current_user.user_id) }}" class="btn btn-secondary"><i class="bi bi-house-fill"></i> Home</a>
+
 							<a href="{{ url_for("main.profile",id=current_user.user_id) }}" class="btn btn-primary"><i class="bi bi-person-fill"></i> Profile</a>
 
 							<a href="/logout" class="btn btn-danger"><i class="bi bi-key"></i> Logout</a>
@@ -34,6 +57,7 @@
 							( Staff Id :- {{ current_user.user_id }} )
 						</div>
 					</div>
+					{% endif %}
 
 					{% with messages=get_flashed_messages(with_categories=true) %}
 					{% if messages %}
@@ -59,12 +83,12 @@
 						<i class="bi bi-person-circle"></i>
 						{{ trek.trek_name }} Trek Participants List
 					</h4>
-					(Trek Id :- {{ trek.trek_id }} , Slot Id :- {{ slot }})  [ Assigned to you ]
+					(Trek Id :- {{ trek.trek_id }} , Slot Id :- {{ slot }})  
 					</div>
 					
 						<div class="text-end fw-semibold">
 							<span class="btn btn-dark disabled">
-							Total Participants : {{ users|length }}
+							Total Participants : {{ total }}
 							</span>
 						</div>
 						
@@ -79,6 +103,7 @@
 											<th>Name</th>
 											<th>Email</th>
 											<th>Phone</th>
+											<th>Slots Booked</th>
 											</tr>
 										</thead>
 										<tbody>
@@ -87,7 +112,8 @@
 													<td>{{ loop.index }}</td>
 													<td><a href="{{ url_for("main.profile",id=s.user_id) }}">{{ s.name }}</a></td>
 													<td>{{ s.email }}</td>
-													<td>{{ s.phonenumber }}</td															</tr>
+													<td>{{ s.phonenumber }}</td>
+													<td>{{ slots_booked[s.user_id] }}														</tr>
 											{% endfor %}
 										</tbody>
 									</table>

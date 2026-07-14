@@ -59,7 +59,7 @@
 							<input type="time" name="slot_time" class="form-control" {% if slot.slot_time!=None %}value="{{ slot.slot_time.isoformat() }}" {% endif %} {% if current_user.role == "admin" %} required {% else %} disabled {% endif %}>
 						</div>
 						<div>
-							<label class="form-label fw-semibold">Slot Limit</label>
+							<label class="form-label fw-semibold">Open Slots Available(apart from booked)</label>
 							<input type="number" name="slot_limit" class="form-control" {% if slot.slot_limit!=None %}value="{{ slot.slot_limit }}" {% endif %} required>
 						</div>
 						<div>

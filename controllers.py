@@ -18,7 +18,7 @@ def user(user_id):
 @bp.route("/",methods=["GET","POST"])
 def login():
     if(request.method == "POST"):
-        login_userr=User.query.filter(or_(User.email==request.form["user"],User.user_name==request.form["user"])).first()
+        login_userr=User.query.filter(or_(User.email==request.form["user"],User.user_name==request.form["user"],User.name==request.form["user"])).first()
         if login_userr == None:
             flash("Enter Valid Username/email",'error')
             return redirect("/")
@@ -77,50 +77,76 @@ def register_user(role):
         return render_template("register.html",role=role)
     
 @bp.route("/admin")
+@login_required
 def admin_dashboard():
-    labels=[]
-    sizes=[]
-    if(hot_treks()!=[]):
-        for label,size in hot_treks():
-            labels.append(label)
-            sizes.append(size)
-        plt.figure(figsize=(4,4))
-        plt.pie(sizes,labels=None,startangle=90,autopct="%1.1f%%",wedgeprops={"edgecolor":"black"})
-        plt.legend(labels,loc="lower center")
-        plt.savefig("static/hot_trek_pie.png")
-        plt.close()
-    if(labels==[] or sizes==[]):
-        return render_template("admin_dashboard.html",bookings=bookings(10),pie=False,Users=User.query.filter(User.role=="user").count(),Treks=Trek.query.count(),Staff=User.query.filter(User.role=="staff").count(),Bookings=Booking.query.count())
-    return render_template("admin_dashboard.html",bookings=bookings(10),pie=True,Users=User.query.filter(User.role=="user").count(),Treks=Trek.query.count(),Staff=User.query.filter(User.role=="staff").count(),Bookings=Booking.query.count())
+    if current_user.role=="admin":
+        labels=[]
+        sizes=[]
+        if(hot_treks()!=[]):
+            for label,size in hot_treks():
+                labels.append(label)
+                sizes.append(size)
+            plt.figure(figsize=(4,4))
+            plt.pie(sizes,labels=None,startangle=90,autopct="%1.1f%%",wedgeprops={"edgecolor":"black"})
+            plt.legend(labels,loc="lower center")
+            plt.savefig("static/hot_trek_pie.png")
+            plt.close()
+        if(labels==[] or sizes==[]):
+            return render_template("admin_dashboard.html",bookings=bookings(10),pie=False,Users=User.query.filter(User.role=="user").count(),Treks=Trek.query.count(),Staff=User.query.filter(User.role=="staff").count(),Bookings=Booking.query.count())
+        return render_template("admin_dashboard.html",bookings=bookings(10),pie=True,Users=User.query.filter(User.role=="user").count(),Treks=Trek.query.count(),Staff=User.query.filter(User.role=="staff").count(),Bookings=Booking.query.count())
+    else:
+        return render_template("unauthorized_access.html")
 
 @bp.route("/users")
+@login_required
 def users():
-    return render_template("user_details.html",users=User.query.filter(User.role=="user").all())
+    if current_user.role=="admin":
+        return render_template("user_details.html",users=User.query.filter(User.role=="user").all())
+    else:
+        return render_template("unauthorized_access.html")
 
 @bp.route("/treks")
+@login_required
 def treks():
-    treks=Trek.query.all()
-    counts={}
-    for trek in treks:
-        counts[trek.trek_id]=(sum(1 for slot in trek.slots if slot.status=="open"))
-    return render_template("trek_details.html",treks=treks,open_slots_count=counts)
+    if current_user.role=="admin":
+        treks=Trek.query.all()
+        counts={}
+        for trek in treks:
+            counts[trek.trek_id]=(sum(1 for slot in trek.slots if slot.status=="open"))
+        return render_template("trek_details.html",treks=treks,open_slots_count=counts)
+    else:
+        return render_template("unauthorized_access.html")
 
 @bp.route("/staff")
+@login_required
 def staff():
-    return render_template("staff_details.html",staff=User.query.filter(User.role=="staff").all())
+    if current_user.role=="admin":
+        return render_template("staff_details.html",staff=User.query.filter(User.role=="staff").all())
+    else:
+        return render_template("unauthorized_access.html")
 
 @bp.route("/approve/<int:id>")
+@login_required
 def approve_staff(id):
     if(current_user.role=="admin"):
         user=User.query.filter(User.user_id==id).first()
-        user.status="approved"
-        db.session.commit()
-        flash(f"User {user.user_id} successfully approved.","success")
-        return redirect("/staff")
+        if user.role=="staff":
+            user.status="approved"
+            flash(f"User {user.user_id} successfully approved.","success")
+            db.session.commit()
+            return redirect("/staff")
+        if user.role=="user":
+            user.status="active"
+            flash(f"User {user.user_id} successfully activated.","success")
+            db.session.commit()
+            return redirect("/users")
+        return redirect("/admin")
     else:
-        return redirect("/")
+        return render_template("unauthorized_access.html")
+    
 
 @bp.route("/blacklist/<int:id>")
+@login_required
 def blacklist(id):
     if(current_user.role=="admin"):
         user=User.query.filter(User.user_id==id).first()
@@ -135,9 +161,10 @@ def blacklist(id):
         else:
             return redirect("/users")
     else:
-        return redirect("/")
+        return render_template("unauthorized_access.html")
     
 @bp.route("/restore/<int:id>")
+@login_required
 def restore(id):
     if(current_user.role=="admin"):
         user=User.query.filter(User.user_id==id).first()
@@ -149,9 +176,10 @@ def restore(id):
         else:
             return redirect("/users")
     else:
-        return redirect("/")
+        return render_template("unauthorized_access.html")
     
 @bp.route("/delete/<int:id>")
+@login_required
 def delete(id):
     if(current_user.role=="admin"):
         user=User.query.filter(User.user_id==id).first()
@@ -164,22 +192,25 @@ def delete(id):
         else:
             return redirect("/users")
     else:
-        return redirect("/")
+        return render_template("unauthorized_access.html")
 
 @bp.route("/profile/<int:id>")
+@login_required
 def profile(id):
     user=User.query.filter(User.user_id==id).first()
     return render_template("profile.html",user=user)
 
 @bp.route("/edit/profile/<int:id>",methods=["GET","POST"])
+@login_required
 def edit_profile(id):
     user=User.query.filter(User.user_id==id).first()
     if request.method == "POST":
-        u=User.query.filter(User.user_name==request.form["user_name"]).first()
-        if u:
-            if u.user_id != user.user_id:
-                flash("Username already taken.","error")
-                return render_template("edit_profile.html",user=user)
+        if request.form["user_name"]=="":
+            u=User.query.filter(User.user_name==request.form["user_name"]).first()
+            if u:
+                if u.user_id != user.user_id:
+                    flash("Username already taken.","error")
+                    return render_template("edit_profile.html",user=user)
         if(request.form["phone"]==request.form["emergency"]):
             flash("Emergency phone number must be different","error")
             return render_template("edit_profile.html",user=user)
@@ -197,6 +228,7 @@ def edit_profile(id):
         return render_template("edit_profile.html",user=user)
     
 @bp.route("/change/password/user/<int:id>",methods=["GET","POST"])
+@login_required
 def change_password(id):
     user=User.query.filter(User.user_id==id).first()
     if request.method == "POST":
@@ -218,8 +250,13 @@ def change_password(id):
         return render_template("change_password.html",user=user)
 
 @bp.route("/all/bookings")
+@login_required
 def all_bookings():
-    return render_template("complete_bookings.html",bookings=bookings(-1))
+    if current_user.role == "admin":
+        return render_template("complete_bookings.html",bookings=bookings(-1))
+    else:
+        return render_template("unauthorized_access.html")
+
 
 def bookings(limit):
     if limit==-1:
@@ -243,109 +280,126 @@ def create_slots(count,id):
         db.session.commit()
 
 @bp.route("/create/trek",methods=["GET","POST"])
+@login_required
 def create_trek():
-    if request.method == "POST":
-        if Trek.query.filter(Trek.trek_name==(request.form["name"])).first():
-            flash("Trek Name already exists","error")
+    if current_user.role=="admin":
+        if request.method == "POST":
+            if Trek.query.filter(Trek.trek_name==(request.form["name"])).first():
+                flash("Trek Name already exists","error")
+                return render_template("new_trek.html")
+            if (int(request.form["duration"]))<=0:
+                flash("Duration must be greater than zero","error")
+                return render_template("new_trek.html")
+            trek_name=request.form["name"]
+            location=request.form["location"]
+            difficulty=request.form["difficulty"]
+            description=request.form["description"]
+            duration=request.form["duration"]
+            cost=request.form["cost"]
+            report_before=request.form["report_before"]
+            trek_book_start=date.fromisoformat(request.form["booking_start"])
+            trek_book_end=date.fromisoformat(request.form["booking_close"])
+            new_trek=Trek(trek_name=trek_name,location=location,difficulty=difficulty,description=description,duration=duration,cost=cost,report_before=report_before,trek_book_start=trek_book_start,trek_book_end=trek_book_end)
+            db.session.add(new_trek)
+            db.session.commit()
+            flash("Trek created Successfully","success")
+            id=new_trek.trek_id
+            create_slots(int(request.form["slots"]),id)
+            return redirect(url_for("main.trek",id=id))
+        else:
             return render_template("new_trek.html")
-        if (int(request.form["duration"]))<=0:
-            flash("Duration must be greater than zero","error")
-            return render_template("new_trek.html")
-        trek_name=request.form["name"]
-        location=request.form["location"]
-        difficulty=request.form["difficulty"]
-        description=request.form["description"]
-        duration=request.form["duration"]
-        cost=request.form["cost"]
-        report_before=request.form["report_before"]
-        trek_book_start=date.fromisoformat(request.form["booking_start"])
-        trek_book_end=date.fromisoformat(request.form["booking_close"])
-        new_trek=Trek(trek_name=trek_name,location=location,difficulty=difficulty,description=description,duration=duration,cost=cost,report_before=report_before,trek_book_start=trek_book_start,trek_book_end=trek_book_end)
-        db.session.add(new_trek)
-        db.session.commit()
-        flash("Trek created Successfully","success")
-        id=new_trek.trek_id
-        create_slots(int(request.form["slots"]),id)
-        return redirect(url_for("main.trek",id=id))
     else:
-        return render_template("new_trek.html")
+        return render_template("unauthorized_access.html")    
+    
   
 @bp.route("/edit/trek/<int:id>",methods=["GET","POST"])
+@login_required
 def edit_trek(id):
-    trek=Trek.query.filter(Trek.trek_id==id).first()
-    count=(sum(1 for slot in trek.slots if (slot.status not in ["completed","going"])))
-    if request.method == "POST":
-        trekk=Trek.query.filter(Trek.trek_name==(request.form["name"])).first()
-        if trekk:
-            if(trek.trek_id != trekk.trek_id):
-                flash("Trek Name already exists","error")
-                return render_template("edit_trek.html",trek=trek,count=count)
-        trek.trek_name=request.form["name"]
-        trek.location=request.form["location"]
-        trek.difficulty=request.form["difficulty"]
-        trek.description=request.form["description"]
-        trek.duration=request.form["duration"]
-        trek.cost=request.form["cost"]
-        trek.report_before=request.form["report_before"]
-        trek.trek_book_start=date.fromisoformat(request.form["booking_start"])
-        trek.trek_book_end=date.fromisoformat(request.form["booking_close"])
-        db.session.commit()
-        flash("Trek edited successfully","success")
-        create_slots(int(request.form["slots"])-count,id)
-        return redirect(url_for("main.trek",id=id))
+    if current_user.role=="admin":
+        trek=Trek.query.filter(Trek.trek_id==id).first()
+        count=(sum(1 for slot in trek.slots if (slot.status not in ["completed","going"])))
+        if request.method == "POST":
+            trekk=Trek.query.filter(Trek.trek_name==(request.form["name"])).first()
+            if trekk:
+                if(trek.trek_id != trekk.trek_id):
+                    flash("Trek Name already exists","error")
+                    return render_template("edit_trek.html",trek=trek,count=count)
+            trek.trek_name=request.form["name"]
+            trek.location=request.form["location"]
+            trek.difficulty=request.form["difficulty"]
+            trek.description=request.form["description"]
+            trek.duration=request.form["duration"]
+            trek.cost=request.form["cost"]
+            trek.report_before=request.form["report_before"]
+            trek.trek_book_start=date.fromisoformat(request.form["booking_start"])
+            trek.trek_book_end=date.fromisoformat(request.form["booking_close"])
+            db.session.commit()
+            flash("Trek edited successfully","success")
+            create_slots(int(request.form["slots"])-count,id)
+            return redirect(url_for("main.trek",id=id))
+        else:
+            return render_template("edit_trek.html",trek=trek,count=count)
     else:
-        return render_template("edit_trek.html",trek=trek,count=count)
+        return render_template("unauthorized_access.html")
     
 @bp.route("/trek/<int:id>")
+@login_required
 def trek(id):
-        trek=Trek.query.filter(Trek.trek_id==id).first()
-        update_statuss(id)
-        db.session.commit()
-        return render_template("trek.html",trek=trek)
+        if current_user.role=="admin":
+            trek=Trek.query.filter(Trek.trek_id==id).first()
+            update_statuss(id)
+            db.session.commit()
+            return render_template("trek.html",trek=trek)
+        else:
+            return render_template("unauthorized_access.html")
 
 @bp.route("/update/slot/<int:id>",methods=["GET","POST"])
+@login_required
 def update_slot(id):
-    slot=Slots.query.filter(Slots.slot_id==id).first()
-    if(request.method=="POST"):
-        if(int(request.form["slot_limit"])<=0):
-            flash("Slot Limit must be greater than 0","error")
-            return redirect(url_for("main.trek",id=slot.trek_id))
-        if current_user.role=="admin":
-            if(date.fromisoformat(request.form["slot_date"]) < date.today()):
-                flash("Slot date cant be past","error")
+    if current_user.role !="user":
+        slot=Slots.query.filter(Slots.slot_id==id).first()
+        if(request.method=="POST"):
+            if(int(request.form["slot_limit"])<=0):
+                flash("Slot Limit must be greater than 0","error")
                 return redirect(url_for("main.trek",id=slot.trek_id))
-            if(date.fromisoformat(request.form["slot_date"])==date.today() and  time.fromisoformat(request.form["slot_time"])<= datetime.now().time()):
-                flash("Slot time must be in future","error")
-                return redirect(url_for("main.trek",id=slot.trek_id))
-            s=Slots.query.filter(and_(Slots.slot_date == date.fromisoformat(request.form["slot_date"]),Slots.slot_time == time.fromisoformat(request.form["slot_time"]),Slots.trek_id==slot.trek_id,Slots.slot_id!=slot.slot_id)).first()
-            if s:
-                flash("Slot already exists","error")
-                return redirect(url_for("main.trek",id=slot.trek_id))
-            if(date.fromisoformat(request.form["slot_date"]) < slot.treks.trek_book_start):
-                flash("Choose date after trek booking starts","error")
-                return redirect(url_for("main.trek",id=slot.trek_id))
-            if(request.form["slot_status"] in ["open","cancelled","completed","going","opening soon"]):
-                slot.status=request.form["slot_status"]
-            slot.slot_date=date.fromisoformat(request.form["slot_date"])
-            slot.slot_time=time.fromisoformat(request.form["slot_time"])
-        else:
-            if(request.form["slot_status"]!=slot.status):
-                if(request.form["slot_status"] in ["completed","going"]):
+            if current_user.role=="admin":
+                if(date.fromisoformat(request.form["slot_date"]) < date.today()):
+                    flash("Slot date cant be past","error")
+                    return redirect(url_for("main.trek",id=slot.trek_id))
+                if(date.fromisoformat(request.form["slot_date"])==date.today() and  time.fromisoformat(request.form["slot_time"])<= datetime.now().time()):
+                    flash("Slot time must be in future","error")
+                    return redirect(url_for("main.trek",id=slot.trek_id))
+                s=Slots.query.filter(and_(Slots.slot_date == date.fromisoformat(request.form["slot_date"]),Slots.slot_time == time.fromisoformat(request.form["slot_time"]),Slots.trek_id==slot.trek_id,Slots.slot_id!=slot.slot_id)).first()
+                if s:
+                    flash("Slot already exists","error")
+                    return redirect(url_for("main.trek",id=slot.trek_id))
+                if(date.fromisoformat(request.form["slot_date"]) < slot.treks.trek_book_start):
+                    flash("Choose date after trek booking starts","error")
+                    return redirect(url_for("main.trek",id=slot.trek_id))
+                if(request.form["slot_status"] in ["open","cancelled","completed","going","opening soon"]):
                     slot.status=request.form["slot_status"]
-                else:
-                    flash("You can only update status to completed or going","error")
-                    return render_template("update_slot.html",slot=slot)
-        slot.slot_limit=int(request.form["slot_limit"])
-        db.session.commit()
-        update_statuss(slot.treks.trek_id)
-        flash("Slot updated","success")
-        if current_user.role == "admin":
-            return redirect(url_for("main.trek",id=slot.trek_id))
+                slot.slot_date=date.fromisoformat(request.form["slot_date"])
+                slot.slot_time=time.fromisoformat(request.form["slot_time"])
+            else:
+                if(request.form["slot_status"]!=slot.status):
+                    if(request.form["slot_status"] in ["completed","going"]):
+                        slot.status=request.form["slot_status"]
+                    else:
+                        flash("You can only update status to completed or going","error")
+                        return render_template("update_slot.html",slot=slot)
+            slot.slot_limit=int(request.form["slot_limit"])
+            db.session.commit()
+            update_statuss(slot.treks.trek_id)
+            flash("Slot updated","success")
+            if current_user.role == "admin":
+                return redirect(url_for("main.trek",id=slot.trek_id))
+            else:
+                staff=Staff.query.join(Slots).filter(Slots.slot_id==id).first()
+                return redirect(url_for("main.assigned_treks",id=staff.staff_id))
         else:
-            staff=Staff.query.join(Slots).filter(Slots.slot_id==id).first()
-            return redirect(url_for("main.staff_dashboard",id=staff.staff_id))
+            return render_template("update_slot.html",slot=slot)
     else:
-        return render_template("update_slot.html",slot=slot)
+        return render_template("unauthorized_access.html")
 
 def update_statuss(id):
     trek=Trek.query.filter(Trek.trek_id==id).first()
@@ -372,31 +426,44 @@ def update_statuss(id):
 
 
 @bp.route("/delete/trek/<int:id>")
+@login_required
 def delete_trek(id):
-    trek=Trek.query.filter(Trek.trek_id==id).first()
-    db.session.delete(trek)
-    db.session.commit()
-    flash("Trek successfully deleted","info")
-    return redirect(url_for("main.treks"))
+    if current_user.role=="admin":
+        trek=Trek.query.filter(Trek.trek_id==id).first()
+        db.session.delete(trek)
+        db.session.commit()
+        flash("Trek successfully deleted","info")
+        return redirect(url_for("main.treks"))
+    else:
+        return render_template("unauthorized_access.html")
 
 @bp.route("/delete/slot/<int:id>")
+@login_required
 def delete_slot(id):
-    slot=Slots.query.filter(Slots.slot_id==id).first()
-    idd=slot.trek_id
-    db.session.delete(slot)
-    db.session.commit()
-    flash("Trek slot successfully deleted","info")
-    return redirect(url_for("main.trek",id=idd))
+    if current_user.role=="admin":
+        slot=Slots.query.filter(Slots.slot_id==id).first()
+        idd=slot.trek_id
+        db.session.delete(slot)
+        db.session.commit()
+        flash("Trek slot successfully deleted","info")
+        return redirect(url_for("main.trek",id=idd))
+    else:
+        return render_template("unauthorized_access.html")
 
 @bp.route("/logout")
+@login_required
 def logout():
     logout_user()
     flash("You have been successfully logged out.","success")
     return redirect(url_for("main.login"))
 
 @bp.route("/slot/<int:id>")
+@login_required
 def slot_info(id):
-        return render_template("slot_details.html",slot=Slots.query.filter(Slots.slot_id==id).first())
+        if current_user.role=="admin":
+            return render_template("slot_details.html",slot=Slots.query.filter(Slots.slot_id==id).first())
+        else:
+            return render_template("unauthorized_access.html")
 
 def remove_staf_from_slot(staff_id,slot_id):
     staff=Staff.query.filter(and_(Staff.aslot_id==slot_id,Staff.staff_id==staff_id)).first()
@@ -406,98 +473,127 @@ def remove_staf_from_slot(staff_id,slot_id):
     flash("Staff removed from trek slot successfully.","success")
 
 @bp.route("/remove/staff/<int:staff_id>/slot/<int:slot_id>",methods=["GET","POST"])
+@login_required
 def remove_staff_from_slot(staff_id,slot_id):
-    remove_staf_from_slot(staff_id,slot_id)
-    return render_template("slot_details.html",slot=Slots.query.filter(Slots.slot_id==slot_id).first())
+    if current_user.role=="admin":
+        remove_staf_from_slot(staff_id,slot_id)
+        return render_template("slot_details.html",slot=Slots.query.filter(Slots.slot_id==slot_id).first())
+    else:
+        return render_template("unauthorized_access.html")
 
 def add_staff_to_slot(staff_id,slot_id):
     staff=Staff(staff_id=staff_id,aslot_id=slot_id)
     db.session.add(staff)
 
 @bp.route("/assign/staff/toslot/<int:id>",methods=["GET","POST"])
+@login_required
 def assign_staff_to_slot(id):
-    slot=Slots.query.filter(Slots.slot_id==id).first()
-    if request.method=="POST":
-        if(request.form.getlist("staff")==[]):
-            flash("No staff selected","error")
+    if current_user.role=="admin":
+        slot=Slots.query.filter(Slots.slot_id==id).first()
+        if request.method=="POST":
+            if(request.form.getlist("staff")==[]):
+                flash("No staff selected","error")
+                return redirect(url_for("main.slot_info",id=slot.slot_id))
+            staff_list=request.form.getlist("staff")
+            for x in staff_list:
+                add_staff_to_slot(int(x),slot.slot_id)
+            db.session.commit()
             return redirect(url_for("main.slot_info",id=slot.slot_id))
-        staff_list=request.form.getlist("staff")
-        for x in staff_list:
-            add_staff_to_slot(int(x),slot.slot_id)
-        db.session.commit()
-        return redirect(url_for("main.slot_info",id=slot.slot_id))
-    else:
-        staff=[]
-        if slot.slot_date:
-            date1=slot.slot_date + timedelta(days=slot.treks.duration)
         else:
-            date1=None
-        for u in User.query.filter(User.role=="staff").all():
-            if not u.treks:
-                staff.append(u)
+            staff=[]
+            if slot.slot_date:
+                date1=slot.slot_date + timedelta(days=slot.treks.duration)
             else:
-                eligible=False
-                remove_slots=[]
-                for x in u.treks:
-                    if (x.trek_slot.status =="completed"):
-                       remove_slots.append(x.trek_slot.slot_id)
-                       eligible=True
-                    if x.trek_slot.status == "open" or "opening soon":
-                        if date1:
-                            if x.trek_slot.slot_date > date1:
-                                eligible=True
-                            else:
-                                eligible=False
-                                break
-                        else:
-                            eligible=True
-                for slot_id in remove_slots:
-                    remove_staf_from_slot(u.user_id,slot_id)
-                if eligible:
+                date1=None
+            for u in User.query.filter(User.role=="staff").all():
+                if not u.treks:
                     staff.append(u)
+                else:
+                    eligible=False
+                    remove_slots=[]
+                    for x in u.treks:
+                        if (x.trek_slot.status =="completed"):
+                            remove_slots.append(x.trek_slot.slot_id)
+                            eligible=True
+                        if x.trek_slot.status == "open" or "opening soon":
+                            if date1:
+                                if x.trek_slot.slot_date > date1:
+                                    eligible=True
+                                else:
+                                    eligible=False
+                                    break
+                            else:
+                                eligible=True
+                    for slot_id in remove_slots:
+                        remove_staf_from_slot(u.user_id,slot_id)
+                    if eligible:
+                        staff.append(u)
                      
-        return render_template("assign_staff.html",slot=slot,staff=staff)
+            return render_template("assign_staff.html",slot=slot,staff=staff)
+    else:
+        return render_template("unauthorized_access.html")
     
 
 @bp.route("/user/<int:id>")
+@login_required
 def user_dashboard(id):
-    s=Trek.query.all()
-    for x in s:
-        update_statuss(x.trek_id)
-    dictn=trek_statuss(id)
-    return render_template("user_dashboard.html",x=0,recent_bookings=dictn["recent_bookings"],upcoming=dictn["upcoming"],total_treks=dictn["total_treks"],ongoing_treks=dictn["ongoing_treks"],slots_booked=dictn["upcoming_trek_slots_booked"])
+    if current_user.role=="user":
+        s=Trek.query.all()
+        for x in s:
+            update_statuss(x.trek_id)
+        dictn=trek_statuss(id)
+        return render_template("user_dashboard.html",x=0,recent_bookings=dictn["recent_bookings"],upcoming=dictn["upcoming"],total_treks=dictn["total_treks"],ongoing_treks=dictn["ongoing_treks"],slots_booked=dictn["upcoming_trek_slots_booked"])
+    else:
+        return render_template("unauthorized_access.html")
 
 @bp.route("/user/<int:id>/upcoming/treks")
+@login_required
 def user_upcoming_treks(id):
-    s=Trek.query.all()
-    for x in s:
-        update_statuss(x.trek_id)
-    dictn=trek_statuss(id)
-    return render_template("user_dashboard.html",x=1,recent_bookings=dictn["recent_bookings"],upcoming=dictn["upcoming"],total_treks=dictn["total_treks"],ongoing_treks=dictn["ongoing_treks"],slots_booked=dictn["upcoming_trek_slots_booked"])
+    if current_user.role=="user":
+        s=Trek.query.all()
+        for x in s:
+            update_statuss(x.trek_id)
+        dictn=trek_statuss(id)
+        return render_template("user_dashboard.html",x=1,recent_bookings=dictn["recent_bookings"],upcoming=dictn["upcoming"],total_treks=dictn["total_treks"],ongoing_treks=dictn["ongoing_treks"],slots_booked=dictn["upcoming_trek_slots_booked"])
+    else:
+        return render_template("unauthorized_access.html")
+
 
 @bp.route("/user/<int:id>/all/unique/treks")
+@login_required
 def user_unique_treks(id):
-    s=Trek.query.all()
-    for x in s:
-        update_statuss(x.trek_id)
-    dictn=trek_statuss(id)
-    return render_template("user_dashboard.html",x=2,recent_bookings=dictn["recent_bookings"],upcoming=dictn["upcoming"],total_treks=dictn["total_treks"],ongoing_treks=dictn["ongoing_treks"],slots_booked=dictn["upcoming_trek_slots_booked"])
+    if current_user.role=="user":
+        s=Trek.query.all()
+        for x in s:
+            update_statuss(x.trek_id)
+        dictn=trek_statuss(id)
+        return render_template("user_dashboard.html",x=2,recent_bookings=dictn["recent_bookings"],upcoming=dictn["upcoming"],total_treks=dictn["total_treks"],ongoing_treks=dictn["ongoing_treks"],slots_booked=dictn["upcoming_trek_slots_booked"])
+    else:
+        return render_template("unauthorized_access.html")
 
 @bp.route("/user/<int:id>/recent/bookings")
+@login_required
 def user_recent_bookings(id):
-    s=Trek.query.all()
-    for x in s:
-        update_statuss(x.trek_id)
-    dictn=trek_statuss(id)
-    return render_template("user_recent_bookings.html",recent_bookings=dictn["recent_bookings"],upcoming=dictn["upcoming"],total_treks=dictn["total_treks"],ongoing_treks=dictn["ongoing_treks"],slots_booked=dictn["upcoming_trek_slots_booked"])
+    if current_user.role=="user":
+        s=Trek.query.all()
+        for x in s:
+            update_statuss(x.trek_id)
+        dictn=trek_statuss(id)
+        return render_template("user_recent_bookings.html",recent_bookings=dictn["recent_bookings"],upcoming=dictn["upcoming"],total_treks=dictn["total_treks"],ongoing_treks=dictn["ongoing_treks"],slots_booked=dictn["upcoming_trek_slots_booked"])
+    else:
+        return render_template("unauthorized_access.html")
 
 @bp.route("/user/<int:id>/all/bookings")
+@login_required
 def user_all_bookings(id):
-    s=Trek.query.all()
-    for x in s:
-        update_statuss(x.trek_id)
-    dictn=trek_statuss(id)
-    return render_template("user_all_bookings.html",recent_bookings=dictn["recent_bookings"],upcoming=dictn["upcoming"],total_treks=dictn["total_treks"],ongoing_treks=dictn["ongoing_treks"],slots_booked=dictn["upcoming_trek_slots_booked"])
+    if current_user.role=="user":
+        s=Trek.query.all()
+        for x in s:
+            update_statuss(x.trek_id)
+        dictn=trek_statuss(id)
+        return render_template("user_all_bookings.html",recent_bookings=dictn["recent_bookings"],upcoming=dictn["upcoming"],total_treks=dictn["total_treks"],ongoing_treks=dictn["ongoing_treks"],slots_booked=dictn["upcoming_trek_slots_booked"])
+    else:
+        return render_template("unauthorized_access.html")
 
 def update_slot_size(slot_id,count):
     slot=Slots.query.filter(Slots.slot_id==slot_id).first()
@@ -505,24 +601,34 @@ def update_slot_size(slot_id,count):
     db.session.commit()
 
 @bp.route("/user/<int:u_id>/cancel/booking/<int:b_id>")
+@login_required
 def cancel_booking(u_id,b_id):
-    booking=Booking.query.filter(Booking.booking_id==b_id).first()
-    update_slot_size(booking.slot_id,booking.slots_booked)
-    booking.status="cancelled"
-    db.session.commit()
-    return redirect(url_for("main.user_recent_bookings",id=current_user.user_id))
-
-@bp.route("/user/<int:u_id>/cancel/booking/<int:b_id>",methods=["GET","POST"])
-def review_booking(u_id,b_id):
-    if request.method=="POST":
-        review=request.form["review"]
-        r=Review(booking_id=b_id,review_description=review,review_date=date.today(),review_time=datetime.now().time())
-        db.session.add(r)
+    if current_user.role!="staff":
+        booking=Booking.query.filter(Booking.booking_id==b_id).first()
+        update_slot_size(booking.slot_id,booking.slots_booked)
+        booking.status="cancelled"
         db.session.commit()
-        return redirect(url_for("main.user_recent_bookings",id=current_user.user_id))
+        if current_user.role == "user":
+            return redirect(url_for("main.user_recent_bookings",id=current_user.user_id))
+        else:
+            return redirect(url_for("main.all_bookings"))
     else:
-        return render_template("review.html",booking_id=b_id,trek=Booking.query.filter(Booking.booking_id==b_id).first().slot.treks)
-    
+        return render_template("unauthorized_access.html")
+
+@bp.route("/user/<int:u_id>/review/booking/<int:b_id>",methods=["GET","POST"])
+@login_required
+def review_booking(u_id,b_id):
+    if current_user.role=="user":
+        if request.method=="POST":
+            review=request.form["review"]
+            r=Review(booking_id=b_id,review_description=review,review_date=date.today(),review_time=datetime.now().time())
+            db.session.add(r)
+            db.session.commit()
+            return redirect(url_for("main.user_recent_bookings",id=current_user.user_id))
+        else:
+            return render_template("review.html",booking_id=b_id,trek=Booking.query.filter(Booking.booking_id==b_id).first().slot.treks)
+    else:
+        return render_template("unauthorized_access.html")
 
 def trek_statuss(id):
     dictn={}
@@ -550,38 +656,70 @@ def trek_statuss(id):
 
 
 @bp.route("/staff/<int:id>")
+@login_required
 def staff_dashboard(id):
-    assigned_treks=Staff.query.join(Slots).filter(and_(Staff.staff_id==id,(Slots.status not in ["completed","going"]))).all()
-    completed_treks=Staff.query.join(Slots).filter(and_(Staff.staff_id==id,Slots.status=="completed")).all()
-    return render_template("staff_dashboard.html",assigned_treks=assigned_treks,completed_treks=completed_treks)
-
+    if current_user.role=="staff":
+        assigned_treks=Staff.query.join(Slots).filter(and_(Staff.staff_id==id,(Slots.status not in ["completed","going"]))).all()
+        completed_treks=Staff.query.join(Slots).filter(and_(Staff.staff_id==id,Slots.status=="completed")).all()
+        return render_template("staff_dashboard.html",assigned_treks=assigned_treks,completed_treks=completed_treks)
+    else:
+        return render_template("unauthorized_access.html")
+    
 @bp.route("/staff/<int:id>/assigned/treks")
+@login_required
 def assigned_treks(id):
-    treks=Staff.query.join(Slots).filter(Staff.staff_id==id).all()
-    assigned_treks=Staff.query.join(Slots).filter(and_(Staff.staff_id==id,(Slots.status not in ["completed","going"]))).all()
-    completed_treks=Staff.query.join(Slots).filter(and_(Staff.staff_id==id,Slots.status=="completed")).all()
-    return render_template("staff_treks.html",treks=treks,x=1,assigned_treks=assigned_treks,completed_treks=completed_treks)
-
+    if current_user.role=="staff":
+        treks=Staff.query.join(Slots).filter(Staff.staff_id==id).all()
+        assigned_treks=Staff.query.join(Slots).filter(and_(Staff.staff_id==id,(Slots.status not in ["completed","going"]))).all()
+        completed_treks=Staff.query.join(Slots).filter(and_(Staff.staff_id==id,Slots.status=="completed")).all()
+        all_slot_sizes={}
+        for a in assigned_treks:
+            all_cancelled_bookings=True
+            for b in a.trek_slot.bookings:
+                if b.status!="cancelled":
+                    all_cancelled_bookings=False
+                    if a.trek_slot.slot_id not in all_slot_sizes.keys():
+                        all_slot_sizes[a.trek_slot.slot_id]=b.slots_booked
+                        all_slot_sizes[a.trek_slot.slot_id]+=a.trek_slot.slot_limit
+                    else:
+                        all_slot_sizes[a.trek_slot.slot_id]+=b.slots_booked
+                if all_cancelled_bookings:
+                    if a.trek_slot.slot_limit:
+                        all_slot_sizes[a.trek_slot.slot_id]=a.trek_slot.slot_limit
+                    all_cancelled_bookings=True
+        return render_template("staff_treks.html",treks=treks,x=1,slots_size=all_slot_sizes,assigned_treks=assigned_treks,completed_treks=completed_treks)
+    else:
+        return render_template("unauthorized_access.html")
+    
 @bp.route("/staff/<int:id>/completed/treks")
+@login_required
 def completed_treks(id):
-    treks=Staff.query.join(Slots).filter(Staff.staff_id==id).all()
-    assigned_treks=Staff.query.join(Slots).filter(and_(Staff.staff_id==id,(Slots.status not in ["completed","going"]))).all()
-    completed_treks=Staff.query.join(Slots).filter(and_(Staff.staff_id==id,Slots.status=="completed")).all()
-    return render_template("staff_treks.html",treks=treks,x=0,assigned_treks=assigned_treks,completed_treks=completed_treks)
+    if current_user.role=="staff":
+        treks=Staff.query.join(Slots).filter(Staff.staff_id==id).all()
+        assigned_treks=Staff.query.join(Slots).filter(and_(Staff.staff_id==id,(Slots.status not in ["completed","going"]))).all()
+        completed_treks=Staff.query.join(Slots).filter(and_(Staff.staff_id==id,Slots.status=="completed")).all()
+        return render_template("staff_treks.html",treks=treks,x=0,assigned_treks=assigned_treks,completed_treks=completed_treks)
+    else:
+        return render_template("unauthorized_access.html")
 
 @bp.route("/update/slot/status/<int:id>")
+@login_required
 def update_slot_status_to_completed(id):
-    slot=Slots.query.filter(Slots.slot_id==id).first()
-    if slot.slot_date!=None:
-        if date.today() > slot.slot_date:
-            slot.status="completed"
-            db.session.commit()
-        if (date.today() == slot.slot_date) and (datetime.now().time() > slot.slot_time):
-            slot.status="completed"
-            db.session.commit()
-    return redirect(url_for("main.staff_dashboard",id=Staff.query.filter(Staff.aslot_id==id).first().staff_id))
+    if current_user.role=="staff":
+        slot=Slots.query.filter(Slots.slot_id==id).first()
+        if slot.slot_date!=None:
+            if date.today() > slot.slot_date:
+                slot.status="completed"
+                db.session.commit()
+            if (date.today() == slot.slot_date) and (datetime.now().time() > slot.slot_time):
+                slot.status="completed"
+                db.session.commit()
+        return redirect(url_for("main.staff_dashboard",id=Staff.query.filter(Staff.aslot_id==id).first().staff_id))
+    else:
+        return render_template("unauthorized_access.html")
 
 @bp.route("/trek/booking",methods=["GET","POST"])
+@login_required
 def book_a_trek():
     treks=Trek.query.all()
     location=[]
@@ -608,6 +746,7 @@ def book_a_trek():
     
 
 @bp.route("/confirm/user/booking/slot/<int:id>/seats/<int:slots>")
+@login_required
 def confirm_booking(id,slots):
     available=Slots.query.filter(Slots.slot_id==id).first()
     if slots > available.slot_limit:
@@ -622,6 +761,7 @@ def confirm_booking(id,slots):
 
 
 @bp.route("/filter/trek",methods=["GET","POST"])
+@login_required
 def trek_filter():
     if request.method=="POST":
         trek_name=request.form["trek_name"]
@@ -706,9 +846,21 @@ def trek_filter():
         return redirect(url_for("main.book_a_trek"))
 
 @bp.route("/participants/<int:id>")
+@login_required
 def participants(id):
-    l=Booking.query.filter(Booking.slot_id==id).all()
-    participants=[]
-    for y in l:
-        participants.append(User.query.filter(User.user_id==y.user_id).first())
-    return render_template("trek_participants.html",users=participants,trek=Trek.query.filter(Trek.trek_id==Slots.query.filter(Slots.slot_id==id).first().trek_id).first(),slot=id)
+    if current_user.role!="user":
+        l=Booking.query.filter(Booking.slot_id==id).all()
+        slots_booked={}
+        total=0
+        participants=[]
+        for y in l:
+            if y.status !="cancelled":
+                participants.append(User.query.filter(User.user_id==y.user_id).first())
+                if y.user in slots_booked.keys():
+                    slots_booked[y.user.user_id]+=y.slots_booked
+                else:
+                    slots_booked[y.user.user_id]=y.slots_booked
+                total=y.slots_booked
+        return render_template("trek_participants.html",total=total,slots_booked=slots_booked,users=participants,trek=Trek.query.filter(Trek.trek_id==Slots.query.filter(Slots.slot_id==id).first().trek_id).first(),slot=id)
+    else:
+        return render_template("unauthorized_access.html")

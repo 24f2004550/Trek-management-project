@@ -82,6 +82,9 @@
 						<a href="/treks" class="nav-link text-primary fw-semibold">Treks</a>
 					
 						<a href="/staff" class="nav-link text-primary fw-semibold">Staff</a>
+
+						<a href="/all/bookings" class="nav-link text-primary fw-semibold">All bookings</a>
+
 						
 						<a href="{{ url_for("main.profile",id=user.user_id) }}" class="nav-link {% if current_user.role==user.role %}text-dark{% else %}text-primary{% endif %} fw-semibold">Profile</a>
 				
@@ -153,7 +156,7 @@
 									</table>
 								</div>
 							</div>
-				{% if current_user.role !="user" %}
+				{% if current_user.role !="user" and user.role=="user" %}
 				<div>
 				<h4 class="text-decoration-underline text-dark">Recent Bookings</h4>
 				{% if user.bookings|length >0 %}
