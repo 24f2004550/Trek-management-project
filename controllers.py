@@ -15,6 +15,10 @@ bp=Blueprint("main",__name__)
 def user(user_id):
     return User.query.get(int(user_id))
 
+if User.query.filter(User.role=="admin") is None:
+    new_user=User(name="Maanya Khanna",password=generate_password_hash("12345678"),status="active",email="maanyakhanna2020@gmail.com",phonenumber="8642013579",emergency_number="9753124680",role="admin")
+    db.session.commit()
+
 @bp.route("/",methods=["GET","POST"])
 def login():
     if(request.method == "POST"):
