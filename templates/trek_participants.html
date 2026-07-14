@@ -85,7 +85,7 @@
 											{% for s in users%}
 												<tr>
 													<td>{{ loop.index }}</td>
-													<td>{{ s.name }}</td>
+													<td><a href="{{ url_for("main.profile",id=s.user_id) }}">{{ s.name }}</a></td>
 													<td>{{ s.email }}</td>
 													<td>{{ s.phonenumber }}</td															</tr>
 											{% endfor %}

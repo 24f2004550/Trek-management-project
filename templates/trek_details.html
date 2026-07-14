@@ -93,7 +93,7 @@
 											{% for s in treks%}
 												<tr>
 													<td>{{ loop.index }}</td>
-													<td><a href="{{ url_for("main.trek",id=s.trek_id) }}">{{ s.trek_name }}</a></td>
+													<td><a href="{{ url_for("main.trek",id=s.trek_id) }}" class="text-decoration-none">{{ s.trek_name }}</a></td>
 													<td>{{ s.location }}</td>
 													<td>{{ s.difficulty }}</td>
 													<td>{{ s.duration }}</td>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>All bookings</title>
+		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    		<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+		<link rel="stylesheet"href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+		<style>
+		</style>
+	</head>
+	<body class="bg-warning-subtle px-0">
+	<div class="container-fluid py-2 px-0">
+		<div class="row justify-content-center">
+		<div class="col-md-10 col-lg-11">
+			<div class="card shadow-lg border-0 py-1">
+				<div class="card-header bg-dark text-white">
+					<h4 class="mb-0">
+								 User Dashboard
+					</h4>
+				</div>
+				<div class="card-body">
+				<div class=" row bg-light">					
+					<h4 class="col">
+						Welcome,{{ current_user.name }}					
+					</h4>
+					<div class="col-auto">
+					<span class="d-flex gap-5 py-1 px-5 border-primary border rounded-pill">
+					
+						<a href="{{ url_for("main.user_dashboard",id=current_user.user_id) }}" class="{%if x!=0 %} text-primary {% else %} text-dark text-decoration-none {% endif %} fw-semibold">Home</a>
+											
+						<a href="{{ url_for("main.profile",id=current_user.user_id) }}" class="text-primary fw-semibold">Profile</a>
+				
+						<a href="/logout" class="text-primary fw-semibold">Logout</a>
+					
+					</span>
+					</div>
+				</div>
+				{% with messages=get_flashed_messages(with_categories=true) %}
+					{% if messages %}
+					{% for category,message in messages %}
+					<div class="
+						{% if category == "success" %}
+							alert alert-success
+						{% elif category == "info" %}
+							alert alert-info
+						{% elif category == "warning" %}
+							alert alert-warning
+						{% elif category == "error" %}
+							alert alert-danger
+						{% else %}
+							alert alert-secondary
+						{% endif %}">{{ message }}
+					</div>
+					{% endfor %}
+					{% endif %}
+					{% endwith %}
+				<div class="row mb-4 py-3">
+					<div class="col-md-3">
+						<a href="{{ url_for("main.user_unique_treks",id=current_user.user_id) }}" class="text-decoration-none">
+						<div class="card shadow bg-success text-light border rounded">
+							<div class="card-body text-center fw-semibold">
+								<h2>{{ total_treks|length }}</h2>
+								<p class="mb-0">Total Unique Treks</p>
+							</div>
+						</div></a>
+					</div>
+					<div class="col-md-3">
+						<a href="{{ url_for("main.user_upcoming_treks",id=current_user.user_id) }}" class="text-decoration-none">
+						<div class="card shadow bg-success text-light border rounded">
+							<div class="card-body text-center fw-semibold">
+								<h2>{{ upcoming|length }}</h2>
+								<p class="mb-0">Upcoming treks</p>
+							</div>
+						</div></a>
+					</div>
+					<div class="col-md-3">
+						<a href="{{ url_for("main.user_recent_bookings",id=current_user.user_id) }}" class="text-decoration-none">
+						<div class="card shadow bg-success text-light border rounded">
+							<div class="card-body text-center fw-semibold">
+								<h2>{{ recent_bookings|length }}</h2>
+								<p class="mb-0">Bookings in past 1 year</p>
+							</div>
+						</div></a>
+					</div>
+					<div class="col-md-3">
+						<a href="{{ url_for("main.user_all_bookings",id=current_user.user_id) }}" class="text-decoration-none">
+						<div class="card shadow bg-secondary text-light border rounded">
+							<div class="card-body text-center fw-semibold">
+								<h2>{{ current_user.bookings|length }}</h2>
+								<p class="mb-0">Total Bookings</p>
+							</div>
+						</div></a>
+					</div>
+				</div>
+			
+				<div class="text-end py-1">
+					<a href="{{ url_for("main.book_a_trek") }}" class="btn btn-warning fs-5"><i class="bi bi-calendar-event"></i> Book a trek</a>
+				</div>
+
+
+						
+						{% if current_user.bookings|length > 0 %}
+						<div class="card shadow-lg border-0">
+							<div class="card-body">
+								<div class="table-responsive">
+									<table class="table table-striped table-hover table-bordered align-middle">
+										<thead class="table-dark">
+											<tr>
+											<th>S No.</th>
+											<th>Booking ID</th>
+											<th>Booking Date</th>
+											<th>Trek Booked</th>
+											<th>Slot Booked</th>
+											<th>Slot Timings</th>
+											<th>Slots Booked</th>
+											<th>Trek Status</th>
+											<th>Actions</th>
+											</tr>
+										</thead>
+										<tbody>
+											{% for s in current_user.bookings%}
+												<tr>
+													<td>{{ loop.index }}</td>																<td>{{ s.booking_id }}</td>
+													<td>{{ s.booking_date }}</td>
+													<td>{{ s.slot.treks.trek_name }}															<td>{{ s.slot.slot_date }}</td>
+													<td>{{ s.slot.slot_time }}</td>
+													<td>{{ s.slots_booked }}</td>
+													{% if s.status !="cancelled" %}
+													<td>{{ s.slot.status }}</td>
+													{% else %}
+													<td>{{ s.status }}</td>
+													{% endif %}
+													<td>
+														{% if s.slot.status not in ["completed","going"] and s.status!="cancelled" %}
+							<a href="{{ url_for('main.cancel_booking',u_id=s.user_id,b_id=s.booking_id) }}" class="btn btn-danger btn-sm">
+								<i class="bi bi-x-square"></i>
+								Cancel Booking
+							</a>	
+								{% elif s.slot.status =="completed" %}	
+								<a href="{{ url_for('main.review_booking',u_id=current_user.user_id,b_id=s.booking_id) }}" class="btn btn-success btn-sm">
+								<i class="bi bi-check-square"></i>
+								Review Completed Trek</a>
+								{% elif s.status == "cancelled" %}	
+								<span class="btn btn-secondary btn-sm">
+								<i class="bi bi-x-circle"></i>
+								Cancelled</span>
+								{% else %}	
+								<span class="btn btn-warning btn-sm">
+								<i class="bi bi-person-walking"></i>
+								Ongoing Trek</span>
+	
+
+														{% endif %}
+													</td>
+												</tr>
+											{% endfor %}
+										</tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+					{% else %}
+						Not booked any trek yet.
+					{% endif %}
+
+
+				</div>
+			</div>
+		</div>
+		</div>
+	</div>	
+	</body>
+</html>

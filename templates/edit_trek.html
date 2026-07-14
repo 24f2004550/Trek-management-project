@@ -57,10 +57,19 @@
 						<div>
 							<label class="form-label fw-semibold">Difficulty</label>
 							<select name="difficulty" class="form-select" required>
-								<option value="">Select difficulty</option>
+							{% if trek.difficulty=="easy" %}
 								<option value="easy">Easy</option>
 								<option value="medium">Medium</option>
 								<option value="hard">Hard</option>
+							{% elif trek.difficulty=="medium" %}
+								<option value="medium">Medium</option>
+								<option value="easy">Easy</option>
+								<option value="hard">Hard</option>
+							{% else %}
+								<option value="hard">Hard</option>
+								<option value="easy">Easy</option>
+								<option value="medium">Medium</option>
+							{% endif %}
 							</select>
 						</div>
 

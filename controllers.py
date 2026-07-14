@@ -2,7 +2,7 @@ from flask import Flask,redirect,request,render_template,url_for,flash,session,B
 from sqlalchemy import text,or_,and_,func
 from flask_login import LoginManager,login_user,login_required,current_user,logout_user
 from werkzeug.security import generate_password_hash,check_password_hash
-from models import User,Trek,Slots,Booking,Staff
+from models import User,Trek,Slots,Booking,Staff,Review
 from extensions import login_manager,db
 from datetime import date,timedelta,time,datetime
 import matplotlib.pyplot as plt
@@ -65,7 +65,7 @@ def register_user(role):
             phonenumber=request.form["phone"]
             emergency_number=request.form["emergency"]
             if(role=="user"):
-                new_user=User(name=name,password=password,status="approved",email=email,phonenumber=phonenumber,emergency_number=emergency_number,role=role)
+                new_user=User(name=name,password=password,status="active",email=email,phonenumber=phonenumber,emergency_number=emergency_number,role=role)
             else:
                 new_user=User(experience=request.form["experience"],name=name,role=role,email=email,phonenumber=phonenumber,emergency_number=emergency_number,password=password)
             flash("Registration Successful","success")
@@ -217,7 +217,13 @@ def change_password(id):
     else:
         return render_template("change_password.html",user=user)
 
+@bp.route("/all/bookings")
+def all_bookings():
+    return render_template("complete_bookings.html",bookings=bookings(-1))
+
 def bookings(limit):
+    if limit==-1:
+        bookings=Booking.query.all()
     bookings=Booking.query.order_by(Booking.booking_date.desc(),Booking.booking_time.desc()).limit(limit).all()
     return bookings
 
@@ -232,8 +238,9 @@ def create_slots(count,id):
     for i in range(count):
         new_slot=Slots(trek_id=trek_id)
         db.session.add(new_slot)
-    flash("Trek's slot created Successfully","success")
-    db.session.commit()
+    if count>0:
+        flash("Trek's slot created Successfully","success")
+        db.session.commit()
 
 @bp.route("/create/trek",methods=["GET","POST"])
 def create_trek():
@@ -393,14 +400,15 @@ def slot_info(id):
 
 def remove_staf_from_slot(staff_id,slot_id):
     staff=Staff.query.filter(and_(Staff.aslot_id==slot_id,Staff.staff_id==staff_id)).first()
-    db.session.delete(staff)
-    db.session.commit()
+    if staff:
+        db.session.delete(staff)
+        db.session.commit()
     flash("Staff removed from trek slot successfully.","success")
 
 @bp.route("/remove/staff/<int:staff_id>/slot/<int:slot_id>",methods=["GET","POST"])
 def remove_staff_from_slot(staff_id,slot_id):
     remove_staf_from_slot(staff_id,slot_id)
-    return render_template("slot_details.html",slot=Slots.query.filter(Slots.slot_id==id).first())
+    return render_template("slot_details.html",slot=Slots.query.filter(Slots.slot_id==slot_id).first())
 
 def add_staff_to_slot(staff_id,slot_id):
     staff=Staff(staff_id=staff_id,aslot_id=slot_id)
@@ -431,10 +439,10 @@ def assign_staff_to_slot(id):
                 eligible=False
                 remove_slots=[]
                 for x in u.treks:
-                    if (x.trek_slot.status =="completed" or x.trek_slot.status =="opening soon"):
+                    if (x.trek_slot.status =="completed"):
                        remove_slots.append(x.trek_slot.slot_id)
                        eligible=True
-                    if x.trek_slot.status == "open":
+                    if x.trek_slot.status == "open" or "opening soon":
                         if date1:
                             if x.trek_slot.slot_date > date1:
                                 eligible=True
@@ -453,7 +461,93 @@ def assign_staff_to_slot(id):
 
 @bp.route("/user/<int:id>")
 def user_dashboard(id):
-    return render_template("user_dashboard.html",id=id)
+    s=Trek.query.all()
+    for x in s:
+        update_statuss(x.trek_id)
+    dictn=trek_statuss(id)
+    return render_template("user_dashboard.html",x=0,recent_bookings=dictn["recent_bookings"],upcoming=dictn["upcoming"],total_treks=dictn["total_treks"],ongoing_treks=dictn["ongoing_treks"],slots_booked=dictn["upcoming_trek_slots_booked"])
+
+@bp.route("/user/<int:id>/upcoming/treks")
+def user_upcoming_treks(id):
+    s=Trek.query.all()
+    for x in s:
+        update_statuss(x.trek_id)
+    dictn=trek_statuss(id)
+    return render_template("user_dashboard.html",x=1,recent_bookings=dictn["recent_bookings"],upcoming=dictn["upcoming"],total_treks=dictn["total_treks"],ongoing_treks=dictn["ongoing_treks"],slots_booked=dictn["upcoming_trek_slots_booked"])
+
+@bp.route("/user/<int:id>/all/unique/treks")
+def user_unique_treks(id):
+    s=Trek.query.all()
+    for x in s:
+        update_statuss(x.trek_id)
+    dictn=trek_statuss(id)
+    return render_template("user_dashboard.html",x=2,recent_bookings=dictn["recent_bookings"],upcoming=dictn["upcoming"],total_treks=dictn["total_treks"],ongoing_treks=dictn["ongoing_treks"],slots_booked=dictn["upcoming_trek_slots_booked"])
+
+@bp.route("/user/<int:id>/recent/bookings")
+def user_recent_bookings(id):
+    s=Trek.query.all()
+    for x in s:
+        update_statuss(x.trek_id)
+    dictn=trek_statuss(id)
+    return render_template("user_recent_bookings.html",recent_bookings=dictn["recent_bookings"],upcoming=dictn["upcoming"],total_treks=dictn["total_treks"],ongoing_treks=dictn["ongoing_treks"],slots_booked=dictn["upcoming_trek_slots_booked"])
+
+@bp.route("/user/<int:id>/all/bookings")
+def user_all_bookings(id):
+    s=Trek.query.all()
+    for x in s:
+        update_statuss(x.trek_id)
+    dictn=trek_statuss(id)
+    return render_template("user_all_bookings.html",recent_bookings=dictn["recent_bookings"],upcoming=dictn["upcoming"],total_treks=dictn["total_treks"],ongoing_treks=dictn["ongoing_treks"],slots_booked=dictn["upcoming_trek_slots_booked"])
+
+def update_slot_size(slot_id,count):
+    slot=Slots.query.filter(Slots.slot_id==slot_id).first()
+    slot.slot_limit=slot.slot_limit+count
+    db.session.commit()
+
+@bp.route("/user/<int:u_id>/cancel/booking/<int:b_id>")
+def cancel_booking(u_id,b_id):
+    booking=Booking.query.filter(Booking.booking_id==b_id).first()
+    update_slot_size(booking.slot_id,booking.slots_booked)
+    booking.status="cancelled"
+    db.session.commit()
+    return redirect(url_for("main.user_recent_bookings",id=current_user.user_id))
+
+@bp.route("/user/<int:u_id>/cancel/booking/<int:b_id>",methods=["GET","POST"])
+def review_booking(u_id,b_id):
+    if request.method=="POST":
+        review=request.form["review"]
+        r=Review(booking_id=b_id,review_description=review,review_date=date.today(),review_time=datetime.now().time())
+        db.session.add(r)
+        db.session.commit()
+        return redirect(url_for("main.user_recent_bookings",id=current_user.user_id))
+    else:
+        return render_template("review.html",booking_id=b_id,trek=Booking.query.filter(Booking.booking_id==b_id).first().slot.treks)
+    
+
+def trek_statuss(id):
+    dictn={}
+    u=User.query.filter(User.user_id==id).first()
+    datee=date.today()-timedelta(days=365)
+    recent_bookings=Booking.query.filter(and_(Booking.booking_date >= datee,Booking.user_id==id)).all()
+    upcoming=[]
+    upcoming_trek_slots_booked={}
+    total_treks=[]
+    ongoing_treks=[]
+    for x in u.bookings:
+        if x.slot.slot_date > date.today() and x.status!="cancelled":
+            upcoming.append(x.slot)
+            upcoming_trek_slots_booked[x.slot.slot_id]=[x.slots_booked,x.booking_id]
+        if x.slot.treks not in total_treks and x.status!="cancelled":
+            total_treks.append(x.slot.treks)
+        if x.slot.status == "going":
+            ongoing_treks.append(x.slot)
+    dictn["upcoming"]=upcoming
+    dictn["recent_bookings"]=recent_bookings
+    dictn["total_treks"]=total_treks
+    dictn["ongoing_treks"]=ongoing_treks
+    dictn["upcoming_trek_slots_booked"]=upcoming_trek_slots_booked
+    return dictn
+
 
 @bp.route("/staff/<int:id>")
 def staff_dashboard(id):
@@ -475,7 +569,7 @@ def completed_treks(id):
     completed_treks=Staff.query.join(Slots).filter(and_(Staff.staff_id==id,Slots.status=="completed")).all()
     return render_template("staff_treks.html",treks=treks,x=0,assigned_treks=assigned_treks,completed_treks=completed_treks)
 
-@bp.route("/uppdate/slot/status/<int:id>")
+@bp.route("/update/slot/status/<int:id>")
 def update_slot_status_to_completed(id):
     slot=Slots.query.filter(Slots.slot_id==id).first()
     if slot.slot_date!=None:
@@ -486,6 +580,130 @@ def update_slot_status_to_completed(id):
             slot.status="completed"
             db.session.commit()
     return redirect(url_for("main.staff_dashboard",id=Staff.query.filter(Staff.aslot_id==id).first().staff_id))
+
+@bp.route("/trek/booking",methods=["GET","POST"])
+def book_a_trek():
+    treks=Trek.query.all()
+    location=[]
+    for t in treks:
+        if t.location not in location:
+            location.append(t.location)
+    if request.method=="POST":
+        if(request.form["slot_id"]==""):
+            flash("Choose slot","error")
+            return redirect(url_for("main.book_a_trek"))
+        id=int(request.form["slot_id"])
+        tocheck=int(request.form["slots_needed"])
+        if(tocheck<0):
+            flash("Enter positive slots","error")
+            return redirect(url_for("main.book_a_trek"))
+        available=Slots.query.filter(Slots.slot_id==id).first().slot_limit
+        if(tocheck > available):
+            flash(f"Only {available} slots available for chosen trek.","error")
+            return redirect(url_for("main.book_a_trek"))
+        return render_template("trek_booking.html",treks=treks,location=location,available=True,id=Slots.query.filter(Slots.slot_id==id).first(),need=tocheck)
+    else:
+        treks=Trek.query.all()
+        return render_template("trek_booking.html",location=location,treks=treks,available=False,id=None)
+    
+
+@bp.route("/confirm/user/booking/slot/<int:id>/seats/<int:slots>")
+def confirm_booking(id,slots):
+    available=Slots.query.filter(Slots.slot_id==id).first()
+    if slots > available.slot_limit:
+        flash(f"Only {available.slot_limit} seats available for chosen trek.","error")
+        return redirect(url_for("main.book_a_trek"))
+    else:
+        available.slot_limit-=slots
+        booking=Booking(user_id=current_user.user_id,slot_id=id,booking_date=date.today(),booking_time=datetime.now().time(),slots_booked=slots,status="booked")
+        db.session.add(booking)
+        db.session.commit()
+        return redirect(url_for("main.user_recent_bookings",id=current_user.user_id))
+
+
+@bp.route("/filter/trek",methods=["GET","POST"])
+def trek_filter():
+    if request.method=="POST":
+        trek_name=request.form["trek_name"]
+        location=request.form["location"]
+        start_date=request.form["start_date"]
+        cost=request.form["cost"]
+        difficulty=request.form["difficulty"]
+        open=request.form.get("open")
+        trekss=Trek.query.all()
+        locationn=[]
+        for t in trekss:
+            if t.location not in locationn:
+                locationn.append(t.location)
+        treks=[]
+        f=False
+        if trek_name != "":
+            f=True
+            for t in trekss:
+                if t.trek_name==trek_name:
+                    treks.append(t)
+        if f:
+            trekss=treks
+            treks=[]
+            f=False
+        if difficulty != "":
+            f=True
+            for t in trekss:
+                if t.difficulty==difficulty:
+                    treks.append(t)
+        if f:
+            trekss=treks
+            treks=[]
+            f=False
+        if cost != "":
+            f=True
+            c=int(cost)
+            for t in trekss:
+                if t.cost<=c:
+                    treks.append(t)
+        if f:
+            trekss=treks
+            treks=[]
+            f=False
+        if location != "":
+            f=True
+            for t in trekss:
+                if t.location==location:
+                    treks.append(t)
+        if f:
+            trekss=treks
+            treks=[]
+            f=False
+        if start_date !="":
+            f=True
+            d=date.fromisoformat(start_date)
+            for t in trekss:
+                Flag=False
+                for s in t.slots:
+                    if s.slot_date == d:
+                        Flag=True
+                        break
+                if Flag:
+                    treks.append(t)
+        if f:
+            trekss=treks
+            treks=[]
+            f=False
+        if open:
+            f=True
+            for t in trekss:
+                Flag=False
+                for s in t.slots:
+                    if s.status == "open":
+                        Flag=True
+                        break
+                if Flag:
+                    treks.append(t)
+        if f:
+            trekss=treks
+        return render_template("trek_booking.html",location=locationn,treks=trekss,available=False,id=None)
+    else:
+        return redirect(url_for("main.book_a_trek"))
 
 @bp.route("/participants/<int:id>")
 def participants(id):

@@ -87,7 +87,7 @@ Delete Slot</a>
 											</tr>
 											<tr>
 											<th>Trek Name</th>
-											<td>{{ slot.treks.trek_name }}</td>
+											<td><a href="{{ url_for("main.trek",id=slot.treks.trek_id) }}" class="text-decoration-none">{{ slot.treks.trek_name }}</a></td>
 											</tr>
 											<tr>
 											<th>Slot Date</th>
