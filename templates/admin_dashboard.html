@@ -101,7 +101,11 @@
 				
 				<ul>
 					{% for b in bookings %}
-					<li>{{ b.user.name }} booked {{ b.slots_booked }} slots for {{ b.slot.treks.trek_name}}</li>
+					{% if b.status == "cancelled" %}
+					<li>{{ b.user.name }} booked {{ b.slots_booked }} slots for {{ b.slot.treks.trek_name}} but cancelled.</li>
+					{% else  %}
+					<li>{{ b.user.name }} booked {{ b.slots_booked }} slots for {{ b.slot.treks.trek_name}} </li>
+					{% endif %}
 					{% endfor %}
 				</ul>
 

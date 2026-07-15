@@ -152,9 +152,14 @@ def blacklist(id):
     if(current_user.role=="admin"):
         user=User.query.filter(User.user_id==id).first()
         user.status="blacklisted"
-        if user.treks:
-            for a in user.treks:
-                remove_staf_from_slot(a.staff_id,a.aslot_id)
+        if user.role=="staff":
+            if user.treks:
+                for a in user.treks:
+                    remove_staf_from_slot(a.staff_id,a.aslot_id)
+        if user.role=="user":
+            if user.bookings:
+                for f in user.bookings:
+                    db.session.delete(f)
         db.session.commit()
         flash(f"User {user.user_id} is blacklisted.","error")
         if(user.role=="staff"):
@@ -506,7 +511,7 @@ def assign_staff_to_slot(id):
                 date1=slot.slot_date + timedelta(days=slot.treks.duration)
             else:
                 date1=None
-            for u in User.query.filter(User.role=="staff").all():
+            for u in User.query.filter(and_(User.role=="staff",User.status=="approved")).all():
                 if not u.treks:
                     staff.append(u)
                 else:
@@ -638,12 +643,17 @@ def trek_statuss(id):
     recent_bookings=Booking.query.filter(and_(Booking.booking_date >= datee,Booking.user_id==id)).all()
     upcoming=[]
     upcoming_trek_slots_booked={}
+    upcoming_trek_slot_id=[]
     total_treks=[]
     ongoing_treks=[]
     for x in u.bookings:
         if x.slot.slot_date > date.today() and x.status!="cancelled":
-            upcoming.append(x.slot)
-            upcoming_trek_slots_booked[x.slot.slot_id]=[x.slots_booked,x.booking_id]
+            if x.slot.slot_id not in upcoming_trek_slot_id:
+                upcoming.append(x.slot)
+                upcoming_trek_slots_booked[x.slot.slot_id]=[x.slots_booked,x.booking_id]
+                upcoming_trek_slot_id.append(x.slot.slot_id)
+            else:
+                upcoming_trek_slots_booked[x.slot.slot_id][0]+=x.slots_booked
         if x.slot.treks not in total_treks and x.status!="cancelled":
             total_treks.append(x.slot.treks)
         if x.slot.status == "going":
@@ -758,7 +768,7 @@ def confirm_booking(id,slots):
         booking=Booking(user_id=current_user.user_id,slot_id=id,booking_date=date.today(),booking_time=datetime.now().time(),slots_booked=slots,status="booked")
         db.session.add(booking)
         db.session.commit()
-        return redirect(url_for("main.user_recent_bookings",id=current_user.user_id))
+        return render_template("confirming_booking.html",booking=booking)
 
 
 @bp.route("/filter/trek",methods=["GET","POST"])
@@ -856,12 +866,12 @@ def participants(id):
         participants=[]
         for y in l:
             if y.status !="cancelled":
-                participants.append(User.query.filter(User.user_id==y.user_id).first())
-                if y.user in slots_booked.keys():
-                    slots_booked[y.user.user_id]+=y.slots_booked
-                else:
+                if y.user not in participants:
+                    participants.append(User.query.filter(User.user_id==y.user_id).first())
                     slots_booked[y.user.user_id]=y.slots_booked
-                total=y.slots_booked
+                else:
+                    slots_booked[y.user.user_id]+=y.slots_booked
+                total+=y.slots_booked
         return render_template("trek_participants.html",total=total,slots_booked=slots_booked,users=participants,trek=Trek.query.filter(Trek.trek_id==Slots.query.filter(Slots.slot_id==id).first().trek_id).first(),slot=id)
     else:
         return render_template("unauthorized_access.html")
